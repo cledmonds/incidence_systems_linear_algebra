@@ -1,6 +1,9 @@
 theory Linear_Bound_Argument imports Dual_Systems Jordan_Normal_Form.Determinant 
 Jordan_Normal_Form.DL_Rank Jordan_Normal_Form.Ring_Hom_Matrix BenOr_Kozen_Reif.More_Matrix
+Berlekamp_Zassenhaus.Finite_Field
 begin
+
+
 
 context comm_monoid_add
 begin
@@ -13,7 +16,7 @@ proof -
   finally show ?thesis by simp
 qed
 
-lemma double_sum_mult_hom: "(\<Sum> i \<in> A . (\<Sum> j \<in> g i . (k ::real) * (f i j))) = k* (\<Sum> i \<in> A . (\<Sum> j \<in> g i . f i j))"
+lemma double_sum_mult_hom: "(\<Sum> i \<in> A . (\<Sum> j \<in> g i . (k ::int) * (f i j))) = k* (\<Sum> i \<in> A . (\<Sum> j \<in> g i . f i j))"
   by (simp add: mult_hom.hom_sum)
 
 lemma double_sum_split_case: 
@@ -39,6 +42,7 @@ proof -
     by (simp add: local.sum.distrib) 
   finally show ?thesis by simp
 qed
+
 end
 
 context comm_ring_1
@@ -388,7 +392,7 @@ end
 (* Vector *)
 
 lemma smult_scalar_prod_sum: 
-  fixes x :: "real" 
+  fixes x :: "int" 
   assumes "vx \<in> carrier_vec n"
   assumes "vy \<in> carrier_vec n"
   shows "(\<Sum> i \<in> {0..<n} .((x \<cdot>\<^sub>v vx) $ i) * ((y \<cdot>\<^sub>v vy) $ i)) = x * y * (vx \<bullet> vy)"
@@ -435,51 +439,51 @@ qed
 lemma transform_N_step1_vals: 
   assumes "i < dim_row (N * N\<^sup>T)"
   assumes "j < dim_col (N * N\<^sup>T)"
-  shows "i = 0 \<Longrightarrow> j = 0 \<Longrightarrow> (add_row_to_multiple (-1) [1..<dim_row (N * N\<^sup>T)] 0 (N * N\<^sup>T)) $$ (i, j) = (real \<r>)"
-  and "i \<noteq> 0 \<Longrightarrow> j = 0 \<Longrightarrow> (add_row_to_multiple (-1) [1..<dim_row (N * N\<^sup>T)] 0 (N * N\<^sup>T)) $$ (i, j) = (real \<Lambda>) - (real \<r>)" 
-  and "i = 0 \<Longrightarrow> j \<noteq> 0 \<Longrightarrow> (add_row_to_multiple (-1) [1..<dim_row (N * N\<^sup>T)] 0 (N * N\<^sup>T)) $$ (i, j) = (real \<Lambda>)"
-  and "i \<noteq> 0 \<Longrightarrow> j \<noteq> 0 \<Longrightarrow> i = j \<Longrightarrow> (add_row_to_multiple (-1) [1..<dim_row (N * N\<^sup>T)] 0 (N * N\<^sup>T)) $$ (i, j) = (real \<r>) - (real \<Lambda>)"
+  shows "i = 0 \<Longrightarrow> j = 0 \<Longrightarrow> (add_row_to_multiple (-1) [1..<dim_row (N * N\<^sup>T)] 0 (N * N\<^sup>T)) $$ (i, j) = (int \<r>)"
+  and "i \<noteq> 0 \<Longrightarrow> j = 0 \<Longrightarrow> (add_row_to_multiple (-1) [1..<dim_row (N * N\<^sup>T)] 0 (N * N\<^sup>T)) $$ (i, j) = (int \<Lambda>) - (int \<r>)" 
+  and "i = 0 \<Longrightarrow> j \<noteq> 0 \<Longrightarrow> (add_row_to_multiple (-1) [1..<dim_row (N * N\<^sup>T)] 0 (N * N\<^sup>T)) $$ (i, j) = (int \<Lambda>)"
+  and "i \<noteq> 0 \<Longrightarrow> j \<noteq> 0 \<Longrightarrow> i = j \<Longrightarrow> (add_row_to_multiple (-1) [1..<dim_row (N * N\<^sup>T)] 0 (N * N\<^sup>T)) $$ (i, j) = (int \<r>) - (int \<Lambda>)"
   and "i \<noteq> 0 \<Longrightarrow> j \<noteq> 0 \<Longrightarrow> i \<noteq> j \<Longrightarrow> (add_row_to_multiple (-1) [1..<dim_row (N * N\<^sup>T)] 0 (N * N\<^sup>T)) $$ (i, j) = 0"
 proof - 
   let ?M = "(N * N\<^sup>T)"
   assume a: "j = 0" "i=0"
   then have "(add_row_to_multiple (-1) [1..<dim_col (N * N\<^sup>T)] 0 (N * N\<^sup>T)) $$ (i, j) = (N* N\<^sup>T) $$ (i, j)" using assms by simp
-  then show "(add_row_to_multiple (-1) [1..<dim_row ?M] 0 ?M) $$ (i, j) = (real \<r>)"  using transpose_N_mult_diag v_non_zero assms
+  then show "(add_row_to_multiple (-1) [1..<dim_row ?M] 0 ?M) $$ (i, j) = (int \<r>)"  using transpose_N_mult_diag v_non_zero assms
     by (simp add: a)
 next
   let ?M = "(N * N\<^sup>T)"
   assume a: "j = 0" "i\<noteq>0"
-  then have ail: "((-1) * ?M $$(0, j)) = -(real \<r>)" 
+  then have ail: "((-1) * ?M $$(0, j)) = -(int \<r>)" 
     by (simp add: a assms transpose_N_mult_diag v_non_zero) 
   then have ijne: "j \<noteq> i" using a by simp
-  then have aij: "?M $$ (i, j) = (real \<Lambda>)" using  assms transpose_N_mult_off_diag a v_non_zero
+  then have aij: "?M $$ (i, j) = (int \<Lambda>)" using  assms transpose_N_mult_off_diag a v_non_zero
     by (metis transpose_N_mult_dim(1)) 
-  then have "add_row_to_multiple (-1) [1..<dim_row ?M] 0 ?M $$ (i, j) = (-1)*(real \<r>) + (real \<Lambda>)" using ail transform_N_step1 assms a by simp
-  then show "(add_row_to_multiple (-1) [1..<dim_row ?M] 0 ?M) $$ (i, j) = (real \<Lambda>) - (real \<r>)"
+  then have "add_row_to_multiple (-1) [1..<dim_row ?M] 0 ?M $$ (i, j) = (-1)*(int \<r>) + (int \<Lambda>)" using ail transform_N_step1 assms a by simp
+  then show "(add_row_to_multiple (-1) [1..<dim_row ?M] 0 ?M) $$ (i, j) = (int \<Lambda>) - (int \<r>)"
     by linarith 
 next
   let ?M = "(N * N\<^sup>T)"
   assume a: "i = 0" "j \<noteq> 0"
   have ijne: "i \<noteq> j" using a by simp
   then have "(add_row_to_multiple (-1) [1..<dim_row (N * N\<^sup>T)] 0 (N * N\<^sup>T)) $$ (i, j) = (N* N\<^sup>T) $$ (i, j)" using a assms by simp
-  then show "(add_row_to_multiple (-1) [1..<dim_row ?M] 0 ?M) $$ (i, j) = (real \<Lambda>)" using transpose_N_mult_off_diag v_non_zero assms ijne
+  then show "(add_row_to_multiple (-1) [1..<dim_row ?M] 0 ?M) $$ (i, j) = (int \<Lambda>)" using transpose_N_mult_off_diag v_non_zero assms ijne
     by (metis a(1) transpose_N_mult_dim(2)) 
 next 
   let ?M = "(N * N\<^sup>T)"
   assume a: "i \<noteq> 0" "j \<noteq> 0" "i = j"
-  have ail: "((-1) * ?M $$(0, j)) = -(real \<Lambda>)" 
+  have ail: "((-1) * ?M $$(0, j)) = -(int \<Lambda>)" 
     using assms transpose_N_mult_off_diag a v_non_zero transpose_N_mult_dim(1) by auto  
-  then have aij: "?M $$ (i, j) = (real \<r>)" using  assms transpose_N_mult_diag a v_non_zero
+  then have aij: "?M $$ (i, j) = (int \<r>)" using  assms transpose_N_mult_diag a v_non_zero
     by (metis transpose_N_mult_dim(1)) 
-  then show "(add_row_to_multiple (-1) [1..<dim_row ?M] 0 ?M) $$ (i, j) = (real \<r>) - (real \<Lambda>)"
+  then show "(add_row_to_multiple (-1) [1..<dim_row ?M] 0 ?M) $$ (i, j) = (int \<r>) - (int \<Lambda>)"
     using ail aij transform_N_step1 assms a
     by (metis uminus_add_conv_diff) 
 next 
   let ?M = "(N * N\<^sup>T)"
   assume a: "i \<noteq> 0" "j \<noteq> 0" "i \<noteq> j"
-  have ail: "((-1) * ?M $$(0, j)) = -(real \<Lambda>)" 
+  have ail: "((-1) * ?M $$(0, j)) = -(int \<Lambda>)" 
     using assms transpose_N_mult_off_diag a v_non_zero transpose_N_mult_dim(1) by auto  
-  then have aij: "?M $$ (i, j) = (real \<Lambda>)" using  assms transpose_N_mult_off_diag a v_non_zero
+  then have aij: "?M $$ (i, j) = (int \<Lambda>)" using  assms transpose_N_mult_off_diag a v_non_zero
     by (metis transpose_N_mult_dim(1) transpose_N_mult_dim(2)) 
   then show "(add_row_to_multiple (-1) [1..<dim_row ?M] 0 ?M) $$ (i, j) = 0" using aij ail transform_N_step1 assms a
     by (metis add.commute add.right_inverse)
@@ -521,9 +525,9 @@ lemma transform_N_step2_vals:
   assumes "i < dim_row (N * N\<^sup>T)"
   assumes "j < dim_col (N * N\<^sup>T)"
   assumes "M = (add_row_to_multiple (-1) [1..<dim_row (N * N\<^sup>T)] 0 (N * N\<^sup>T))"
-  shows "i = 0 \<Longrightarrow> j = 0 \<Longrightarrow> add_multiple_cols 1 0 [1..<dim_col M] M $$ (i, j) = (real \<r>) + (real \<Lambda>) * (\<v> - 1)"
-  and "i = 0 \<Longrightarrow> j \<noteq> 0 \<Longrightarrow> add_multiple_cols 1 0 [1..<dim_col M] M $$ (i, j)  = (real \<Lambda>)" 
-  and "i \<noteq> 0 \<Longrightarrow> i = j \<Longrightarrow> add_multiple_cols 1 0 [1..<dim_col M] M $$ (i, j) = (real \<r>) - (real \<Lambda>)"
+  shows "i = 0 \<Longrightarrow> j = 0 \<Longrightarrow> add_multiple_cols 1 0 [1..<dim_col M] M $$ (i, j) = (int \<r>) + (int \<Lambda>) * (\<v> - 1)"
+  and "i = 0 \<Longrightarrow> j \<noteq> 0 \<Longrightarrow> add_multiple_cols 1 0 [1..<dim_col M] M $$ (i, j)  = (int \<Lambda>)" 
+  and "i \<noteq> 0 \<Longrightarrow> i = j \<Longrightarrow> add_multiple_cols 1 0 [1..<dim_col M] M $$ (i, j) = (int \<r>) - (int \<Lambda>)"
   and "i \<noteq> 0 \<Longrightarrow> i \<noteq> j \<Longrightarrow>  add_multiple_cols 1 0 [1..<dim_col M] M $$ (i, j) = 0"
 proof -
   assume a: "i = 0" "j =0"
@@ -531,24 +535,24 @@ proof -
   then have "dim_col M = \<v>"
     by (simp add: points_list_length)
   then have size: "card {1..<dim_col M} = \<v> - 1" by simp 
-  have val: "\<And> l . l \<in> {1..<dim_col M} \<Longrightarrow> M $$ (i, l) = (real \<Lambda>)" using assms(3) transform_N_step1_vals(3)
+  have val: "\<And> l . l \<in> {1..<dim_col M} \<Longrightarrow> M $$ (i, l) = (int \<Lambda>)" using assms(3) transform_N_step1_vals(3)
     by (metis dim_eq a(1) assms(1) atLeastLessThan_iff not_one_le_zero)  
   have "add_multiple_cols 1 0 [1..<dim_col M] M $$ (i, j) = (\<Sum>l\<in>{1..<dim_col M}.  M $$(i,l)) + M$$(i,0)" using a assms transform_N_step2 by simp
-  also have "... = (\<Sum>l\<in>{1..<dim_col M}.  (real \<Lambda>)) + M$$(i,0)" using val by simp
-  also have "... = (\<v> - 1) * (real \<Lambda>) + M$$(i,0)" using size
+  also have "... = (\<Sum>l\<in>{1..<dim_col M}.  (int \<Lambda>)) + M$$(i,0)" using val by simp
+  also have "... = (\<v> - 1) * (int \<Lambda>) + M$$(i,0)" using size
     by (metis sum_constant) 
-  also have "... = (\<v> - 1) * (real \<Lambda>) + (real \<r>)" using transform_N_step1_vals(1)
+  also have "... = (\<v> - 1) * (int \<Lambda>) + (int \<r>)" using transform_N_step1_vals(1)
     using a(1) a(2) assms(1) assms(2) assms(3) by presburger 
-  finally show "add_multiple_cols 1 0 [1..<dim_col M] M $$ (i, j) = (real \<r>) + (real \<Lambda>) * (\<v> - 1)" by simp
+  finally show "add_multiple_cols 1 0 [1..<dim_col M] M $$ (i, j) = (int \<r>) + (int \<Lambda>) * (\<v> - 1)" by simp
 next 
   assume a: "i = 0" "j \<noteq> 0"
   then have "add_multiple_cols 1 0 [1..<dim_col M] M $$ (i, j)  = M $$ (i, j)" using transform_N_step2 assms a by simp
-  then show "add_multiple_cols 1 0 [1..<dim_col M] M $$ (i, j)  = (real \<Lambda>)" using assms a transform_N_step1_vals(3) by simp
+  then show "add_multiple_cols 1 0 [1..<dim_col M] M $$ (i, j)  = (int \<Lambda>)" using assms a transform_N_step1_vals(3) by simp
 next 
   assume a: "i \<noteq> 0" "i = j"
   then have jne: "j \<noteq> 0" by simp
   then have "add_multiple_cols 1 0 [1..<dim_col M] M $$ (i, j) = M $$ (i, j)" using transform_N_step2 assms a by simp
-  then show "add_multiple_cols 1 0 [1..<dim_col M] M $$ (i, j) = (real \<r>) - (real \<Lambda>)" using assms a jne transform_N_step1_vals(4) by simp
+  then show "add_multiple_cols 1 0 [1..<dim_col M] M $$ (i, j) = (int \<r>) - (int \<Lambda>)" using assms a jne transform_N_step1_vals(4) by simp
 next
   assume a: "i \<noteq> 0"  "i \<noteq> j"
   then show "add_multiple_cols 1 0 [1..<dim_col M] M $$ (i, j) = 0" 
@@ -560,14 +564,14 @@ next
     have cond: "\<And> l . l \<in> {1..<dim_col M} \<Longrightarrow> l <dim_col (N * N\<^sup>T) \<and> l \<noteq> 0" using dim_eq by simp 
     then have val: "\<And> l . l \<in> {1..<dim_col M } - {i} \<Longrightarrow> M $$ (i, l) = 0" 
       using assms(3) transform_N_step1_vals(5) a True assms(1) by blast
-    have val2: "M $$ (i, i) = (real \<r>) - (real \<Lambda>)" using assms(3) transform_N_step1_vals(4) a True
+    have val2: "M $$ (i, i) = (int \<r>) - (int \<Lambda>)" using assms(3) transform_N_step1_vals(4) a True
       by (metis assms(1) transpose_N_mult_dim(1) transpose_N_mult_dim(2)) 
-    have val3: "M$$ (i, 0) = (real \<Lambda>) - (real \<r>)" using assms(3) transform_N_step1_vals(2) a True assms(1) assms(2) by blast 
+    have val3: "M$$ (i, 0) = (int \<Lambda>) - (int \<r>)" using assms(3) transform_N_step1_vals(2) a True assms(1) assms(2) by blast 
     have "add_multiple_cols 1 0 [1..<dim_col M] M $$ (i, j) = (\<Sum>l\<in>{1..<dim_col M}.  M $$(i,l)) + M$$(i,0)" 
       using assms transform_N_step2 True by blast
     also have "... = M $$ (i, i)  + (\<Sum>l\<in>{1..<dim_col M} - {i}.  M $$(i,l)) + M$$(i,0)"
       by (metis iin finite_atLeastLessThan sum.remove)
-    also have "... = (real \<r>) - (real \<Lambda>) + (real \<Lambda>) - (real \<r>)" using val val2 val3 by simp
+    also have "... = (int \<r>) - (int \<Lambda>) + (int \<Lambda>) - (int \<r>)" using val val2 val3 by simp
     finally show ?thesis
       by force 
   next
@@ -580,19 +584,19 @@ qed
 lemma transform_N_step2_diag_vals: 
   assumes "i < dim_row (N * N\<^sup>T)"
   assumes "M = (add_row_to_multiple (-1) [1..<dim_row (N * N\<^sup>T)] 0 (N * N\<^sup>T))"
-  shows "i = 0 \<Longrightarrow> add_multiple_cols 1 0 [1..<dim_col M] M $$ (i, i) = (real \<r>) + (real \<Lambda>) * (\<v> - 1)"
-  and "i \<noteq> 0 \<Longrightarrow>  add_multiple_cols 1 0 [1..<dim_col M] M $$ (i, i)  = (real \<r>) - (real \<Lambda>)" 
+  shows "i = 0 \<Longrightarrow> add_multiple_cols 1 0 [1..<dim_col M] M $$ (i, i) = (int \<r>) + (int \<Lambda>) * (\<v> - 1)"
+  and "i \<noteq> 0 \<Longrightarrow>  add_multiple_cols 1 0 [1..<dim_col M] M $$ (i, i)  = (int \<r>) - (int \<Lambda>)" 
 proof -
   assume a: "i = 0" 
   then have "i < dim_col (N * N\<^sup>T)"
     using transpose_N_mult_dim(2) v_non_zero by linarith 
-  then show "add_multiple_cols 1 0 [1..<dim_col M] M $$ (i, i) = (real \<r>) + (real \<Lambda>) * (\<v> - 1)"
+  then show "add_multiple_cols 1 0 [1..<dim_col M] M $$ (i, i) = (int \<r>) + (int \<Lambda>) * (\<v> - 1)"
     using transform_N_step2_vals(1) assms a by blast 
 next
   assume a: "i \<noteq> 0"
   then have "i < dim_col (N * N\<^sup>T)"
     using transpose_N_mult_dim(2) v_non_zero assms(1) transpose_N_mult_dim(1) by linarith
-  then show "add_multiple_cols 1 0 [1..<dim_col M] M $$ (i, i)  = (real \<r>) - (real \<Lambda>)" 
+  then show "add_multiple_cols 1 0 [1..<dim_col M] M $$ (i, i)  = (int \<r>) - (int \<Lambda>)" 
     using transform_N_step2_vals(3)[of "i" "i"]
     using a assms(1) assms(2) by blast 
 qed
@@ -630,11 +634,11 @@ proof -
     by (metis cm) 
   let ?D = "add_multiple_cols 1 0 [1..<dim_col ?C] ?C"
 (*  assumes "k \<notin> set ls" and "\<And>l. l \<in> set ls \<Longrightarrow> l < n" and "A \<in> carrier_mat n n"*)
-  have d00: "?D $$ (0, 0) = ((real \<r>) + (real \<Lambda>) * (\<v> - 1))" using transform_N_step2_diag_vals(1) 
+  have d00: "?D $$ (0, 0) = ((int \<r>) + (int \<Lambda>) * (\<v> - 1))" using transform_N_step2_diag_vals(1) 
     by (metis transpose_N_mult_dim(1) v_non_zero) 
   have ine0: "\<And> i. i \<in> {1..<dim_row ?D} \<Longrightarrow> i \<noteq> 0" by simp
   have "\<And> i. i \<in> {1..<dim_row ?D} \<Longrightarrow> i < dim_row (N * N\<^sup>T)" by simp       
-  then have diagnon0: "\<And> i. i \<in> {1..<\<v>} \<Longrightarrow> ?D $$ (i, i) = (real \<r>) - (real \<Lambda>)"   
+  then have diagnon0: "\<And> i. i \<in> {1..<\<v>} \<Longrightarrow> ?D $$ (i, i) = (int \<r>) - (int \<Lambda>)"   
     using transform_N_step2_diag_vals(2) ine0 dim_row_is_v by simp
   have "dim_col ?C = \<v>"
     by (simp add: points_list_length) 
@@ -654,12 +658,12 @@ proof -
   also have "... = (\<Prod> i = 0 ..< \<v>. ?D $$ (i,i))"  by (simp add: points_list_length)  
   finally have "det (N * N\<^sup>T) = ?D $$ (0, 0) * (\<Prod> i =  1 ..< \<v>. ?D $$ (i,i))" 
     using dimgt2 by (simp add: prod.atLeast_Suc_lessThan v_non_zero) 
-  then have "det (N * N\<^sup>T) = ((real \<r>) + (real \<Lambda>) * (\<v> - 1)) * (\<Prod> i = 1 ..< \<v>. ?D $$ (i,i))" 
+  then have "det (N * N\<^sup>T) = ((int \<r>) + (int \<Lambda>) * (\<v> - 1)) * (\<Prod> i = 1 ..< \<v>. ?D $$ (i,i))" 
     using d00 by simp
-  then have "det (N * N\<^sup>T) = ((real \<r>) + (real \<Lambda>) * (\<v> - 1)) * (\<Prod> i = 1 ..< \<v>. ((real \<r>) - (real \<Lambda>)))" 
+  then have "det (N * N\<^sup>T) = ((int \<r>) + (int \<Lambda>) * (\<v> - 1)) * (\<Prod> i = 1 ..< \<v>. ((int \<r>) - (int \<Lambda>)))" 
     using diagnon0 by simp
-  then have "det (N * N\<^sup>T) = ((real \<r>) + (real \<Lambda>) * (\<v> - 1)) * ((real \<r>) - (real \<Lambda>))^(\<v> - 1)" by simp
-  then have "det (N * N\<^sup>T) = (\<r> + \<Lambda> * (\<v> - 1)) * ((real \<r>) - (real \<Lambda>))^(\<v> - 1)"
+  then have "det (N * N\<^sup>T) = ((int \<r>) + (int \<Lambda>) * (\<v> - 1)) * ((int \<r>) - (int \<Lambda>))^(\<v> - 1)" by simp
+  then have "det (N * N\<^sup>T) = (\<r> + \<Lambda> * (\<v> - 1)) * ((int \<r>) - (int \<Lambda>))^(\<v> - 1)"
     by simp
   then have "det (N * N\<^sup>T) = (\<r> + \<Lambda> * (\<v> - 1)) * ( \<r> - \<Lambda>)^(\<v> - 1)"
     using index_lt_replication
@@ -667,40 +671,87 @@ proof -
   then show ?thesis by blast 
 qed
 
+
+
+
 theorem Fishers_Inequality_BIBD: "\<v> \<le> \<b>"
 proof -
-  let ?B = "N * N\<^sup>T"
+  let ?B = "map_mat (real_of_int) (N * N\<^sup>T)"
+  have b_split: "?B = map_mat (real_of_int) N * map_mat (real_of_int) N\<^sup>T"
+    using of_int_hom.ring_hom_axioms semiring_hom.mat_hom_mult
+    using of_int_hom.semiring_hom_axioms transpose_carrier_mat by blast 
   have b_is_square: "dim_col ?B = \<v>"
-    using transpose_N_mult_dim(2) by blast 
+    using transpose_N_mult_dim(2) by simp
   have b_dim_row: "dim_row ?B = \<v>"
     using dim_row_is_v by simp
   have dim_row_t: "dim_row N\<^sup>T = \<b>"
     by (simp add: dim_col_is_b) 
 (* Calculate the determinant of B and show it is (\<r> + \<Lambda> * (\<v> - 1))* (\<r> - \<Lambda>)^(\<v> - 1) *)
-  have "det ?B = (\<r> + \<Lambda> * (\<v> - 1))* (\<r> - \<Lambda>)^(\<v> - 1)"
+  have db: "det ?B = (\<r> + \<Lambda> * (\<v> - 1))* (\<r> - \<Lambda>)^(\<v> - 1)"
     using determinant_inc_mat_square by simp
 (* Have det(B) \<noteq> 0 as r > \<Lambda> *)
   have lhn0: "(\<r> + \<Lambda> * (\<v> - 1)) > 0"
     using r_gzero by blast 
   have "(\<r> - \<Lambda>) > 0"
     using index_lt_replication zero_less_diff by blast  
-  then have det_not_0:  "det ?B \<noteq> 0" using lhn0
-    by (metis determinant_inc_mat_square mult_eq_0_iff of_nat_eq_0_iff power_eq_0_iff zero_less_iff_neq_zero)
+  then have det_not_0:  "det ?B \<noteq> 0" using lhn0 db
+    by (metis gr_implies_not0 mult_is_0 of_nat_eq_0_iff power_not_zero) 
 (* Conclude that B has rank \<v> - over what vector space? *)
   have "?B \<in> carrier_mat \<v> \<v>" using b_is_square by auto
   then have b_rank: "vec_space.rank \<v> ?B = \<v>"
     using vec_space.low_rank_det_zero det_not_0 by blast
 (* As the rank of a product of matrices cannot exceed the rank of either factor, we have that thesis *)
-  have "vec_space.rank \<v> ?B \<le> min (vec_space.rank \<v> N) (vec_space.rank \<b> N\<^sup>T)"
-    using N_carrier_mat dim_row_t rank_mat_mult_lt_min_rank_factor by blast
-  then have "\<v> \<le> min (vec_space.rank \<v> N) (vec_space.rank \<b> N\<^sup>T)" using b_rank by simp
-  then have "\<v> \<le> vec_space.rank \<v> N"
+  have "vec_space.rank \<v> ?B \<le> min (vec_space.rank \<v> (map_mat (real_of_int) N)) (vec_space.rank \<b> (map_mat (real_of_int) N\<^sup>T))"
+    using N_carrier_mat dim_row_t rank_mat_mult_lt_min_rank_factor b_split
+    by (metis carrier_mat_triv map_carrier_mat) 
+  then have "\<v> \<le> min (vec_space.rank \<v> (map_mat (real_of_int) N)) (vec_space.rank \<b> (map_mat (real_of_int) N\<^sup>T))" 
+    using b_rank by simp
+  then have "\<v> \<le> vec_space.rank \<v> (map_mat (real_of_int) N)"
     by simp
-  thus ?thesis 
-    by (meson le_trans vec_space.rank_le_nc N_carrier_mat transpose_carrier_mat) 
+  thus ?thesis using le_trans vec_space.rank_le_nc N_carrier_mat
+    by (metis map_carrier_mat) 
 qed
 
 end
+
+lemma obtain_set_list_item: 
+  assumes "x \<in> set xs"
+  obtains i where "i < length xs" and "xs ! i = x"
+  by (meson assms in_set_conv_nth)
+
+(*
+lemma mod_ring_distinct_vecs: 
+  fixes A :: "int vec list" and A' :: "('a :: {prime_card} mod_ring) vec list"
+  assumes "A' = map (\<lambda> v. map_vec of_int v) A"
+  assumes "\<And> i x. i < length A \<Longrightarrow> x \<in> set\<^sub>v (A ! i) \<Longrightarrow> x < CARD('a :: {prime_card})"
+  assumes "distinct A" 
+  shows "distinct A'"
+  using assms proof (induct A arbitrary: A')
+  case Nil
+  then show ?case by simp
+next
+  case (Cons a A)
+  define xs :: "('a :: {prime_card} mod_ring) vec list" where "xs \<equiv> map (map_vec of_int) A"
+  have "A' = (map_vec of_int a) # xs"
+    by (simp add: Cons.prems(1) xs_def) 
+  have d: "distinct A" using Cons.prems by simp
+  have "(\<And>i x. i < length A \<Longrightarrow> x \<in>$ A ! i \<Longrightarrow> x < int CARD('a))" using Cons.prems
+    by (metis find_first_le list.set_intros(2) nth_find_first nth_mem) 
+  then have dxs: "distinct xs" using Cons.hyps d apply (auto)
+    using xs_def by blast  
+  have "(map_vec of_int a) \<in> set xs \<Longrightarrow> False" 
+  proof - 
+    assume a: "(map_vec of_int a) \<in> set xs"
+    then obtain i where ilt: "i < length xs" and "xs ! i = (map_vec of_int a)" 
+      using obtain_set_list_item by metis 
+    show "False" sorry
+  qed
+  then have "(map_vec of_int_mod_ring a) \<notin> set ?xs"
+    by blast
+  then show ?case using dxs
+    by (simp add: \<open>A' = map_vec of_int_mod_ring a # map (map_vec of_int_mod_ring) A\<close>) 
+qed
+*)
 
 (* Even town Problem *)
 lemma intersect_num_same_eq_size[simp]: "bl |\<inter>| bl = card bl"
@@ -749,55 +800,6 @@ proof -
 qed
 end
 
-locale even_town = ordered_simple_design +  
-  assumes even_groups: "bl \<in># \<B> \<Longrightarrow> even (card bl)"
-    and even_inters: "bl1 \<in># \<B> \<Longrightarrow> bl2 \<in># \<B> \<Longrightarrow> bl1 \<noteq> bl2 \<Longrightarrow> even (bl1 |\<inter>| bl2)"
-begin
-end
-
-locale odd_town = ordered_design + 
-  assumes odd_groups: "bl \<in># \<B> \<Longrightarrow> odd (card bl)"
-  and even_inters: "bl1 \<in># \<B> \<Longrightarrow> bl2 \<in># (\<B> - {#bl1#})  \<Longrightarrow> even (bl1 |\<inter>| bl2)"
-begin
-
-lemma odd_town_no_repeat_clubs: "distinct_mset \<B>"
-proof (rule ccontr)
-  assume "\<not> distinct_mset \<B>"
-  then obtain a where ain: "a \<in># \<B>" and countne: "count \<B> a \<noteq> 1"
-    by (auto simp add: distinct_mset_def)
-  then have "count \<B> a > 1"
-    using nat_less_le by auto 
-  then have ain2: "a \<in># (\<B> - {#a#})"
-    by (simp add: in_diff_count) 
-  then have "odd (a |\<inter>| a)" using odd_groups ain by simp
-  thus False using even_inters ain ain2
-    by blast 
-qed
-
-end
-
-sublocale odd_town \<subseteq> ordered_simple_design
-  using odd_town_no_repeat_clubs by (unfold_locales) (meson distinct_mset_def) 
-
-
-context odd_town 
-begin
-
-
-
-lemma upper_bound_clubs: "\<b> \<le> \<v>"
-proof -
-  interpret v: vec_space "TYPE(real)" \<v> . 
-  have dimv: "v.dim = \<v>" using v.dim_is_n by simp
-  have lidpt: "v.lin_indpt (set (cols N))" (* Easy set to relate to *)
-    sorry
-  have "distinct ((cols N))" using distinct_cols_N by simp
-
-  thus ?thesis using v.lin_indpt_dim_col_lt_dim[of "N" "\<b>"] lidpt N_carrier_mat dimv by simp
-qed
-
-
-end
 
 lemma vec_prod_zero: "(0\<^sub>v n) \<bullet> (0\<^sub>v n) = 0"
   by simp
@@ -1041,7 +1043,7 @@ next
         (\<Sum>l \<in> {0..<\<v>} . ((c i \<cdot>\<^sub>v (cols N) ! i) $ l) *  ((c j \<cdot>\<^sub>v (cols N) ! j) $ l)) = c i * c j * (((cols N) ! i) \<bullet> ((cols N) ! j)) "
         using smult_scalar_prod_sum
         by (meson atLeastLessThan_iff) 
-      then have "0 = (vs.lincomb_list c (cols N)) \<bullet> (vs.lincomb_list c (cols N))" using vec_prod_zero listcomb by simp
+      have "0 = (vs.lincomb_list c (cols N)) \<bullet> (vs.lincomb_list c (cols N))" using vec_prod_zero listcomb by simp
       also have "... = (vs.sumlist (map (\<lambda>i. c i \<cdot>\<^sub>v (cols N) ! i) [0..<\<b>])) \<bullet> (vs.sumlist (map (\<lambda>j. c j \<cdot>\<^sub>v (cols N) ! j) [0..<\<b>]))"
         using vs.lincomb_list_def by simp
       also have "... = (\<Sum> l \<in> {0..<\<v>} . (vs.sumlist (map (\<lambda>i. c i \<cdot>\<^sub>v (cols N) ! i) [0..<\<b>])) $ l * (vs.sumlist (map (\<lambda>j. c j \<cdot>\<^sub>v (cols N) ! j) [0..<\<b>])) $ l)"
@@ -1128,27 +1130,887 @@ next
 qed
 
 end
+(* Can be moved into design ops *)
+
+context incidence_system
+begin
+
+lemma del_block_b: 
+  "bl \<in># \<B> \<Longrightarrow> size (del_block bl) = \<b> - 1"
+  "bl \<notin># \<B> \<Longrightarrow> size (del_block bl) = \<b>"
+  by (simp_all add: del_block_def size_Diff_singleton)
+
+lemma del_block_points_index: 
+  assumes "ps \<subseteq> \<V>"
+  assumes "card ps = 2"
+  assumes "bl \<in># \<B>"
+  shows "ps \<subseteq> bl \<Longrightarrow> points_index (del_block bl) ps = points_index \<B> ps - 1"
+        "\<not> (ps \<subseteq> bl) \<Longrightarrow> points_index (del_block bl) ps = points_index \<B> ps"
+proof -
+  assume "ps \<subseteq> bl"
+  then show "points_index (del_block bl) ps = points_index \<B> ps - 1"
+    using point_index_diff del_block_def
+    by (metis assms(3) insert_DiffM2 points_index_singleton) 
+next
+  assume "\<not> ps \<subseteq> bl"
+  then show "del_block bl index ps = \<B> index ps"
+    using point_index_diff del_block_def
+    by (metis add_block_def add_block_index_not_in assms(3) insert_DiffM2) 
+qed
+
+end
+
+context finite_incidence_system
+begin
+
+lemma complete_block_size_eq_points: "bl \<in># \<B> \<Longrightarrow> card bl = \<v> \<Longrightarrow> bl = \<V>"
+  using wellformed by (simp add:  card_subset_eq finite_sets) 
+
+lemma complete_block_all_subsets: "bl \<in># \<B> \<Longrightarrow> card bl = \<v> \<Longrightarrow> ps \<subseteq> \<V> \<Longrightarrow> ps \<subseteq> bl"
+  using complete_block_size_eq_points by auto
+
+lemma del_block_complete_points_index: "ps \<subseteq> \<V> \<Longrightarrow> card ps = 2 \<Longrightarrow> bl \<in># \<B> \<Longrightarrow> card bl = \<v> \<Longrightarrow> 
+  points_index (del_block bl) ps = points_index \<B> ps - 1"
+  using complete_block_size_eq_points del_block_points_index(1) by blast
+
+end
+
+context proper_design
+begin
+
+lemma del_block_proper: 
+  assumes "\<b> > 1"
+  shows "proper_design \<V> (del_block bl)"
+proof -
+  interpret d: design \<V> "(del_block bl)"
+    using delete_block_design by simp
+  have "d.\<b> > 0" using del_block_b assms
+    by (metis b_positive zero_less_diff) 
+  then show ?thesis by(unfold_locales) (auto)
+qed
+
+end
+
+context pairwise_balance
+begin
+
+lemma remove_complete_block_pbd: 
+  assumes "\<b> \<ge> 2"
+  assumes "bl \<in># \<B>"
+  assumes "card bl = \<v>"
+  shows "pairwise_balance \<V> (del_block bl) (\<Lambda> - 1)"
+proof -
+  interpret pd: proper_design \<V> "(del_block bl)" using assms(1) del_block_proper by simp
+  show ?thesis using t_lt_order assms del_block_complete_points_index 
+    by (unfold_locales) (simp_all)
+qed
+
+lemma remove_complete_block_pbd_alt: 
+  assumes "\<b> \<ge> 2"
+  assumes "bl \<in># \<B>"
+  assumes "bl = \<V>"
+  shows "pairwise_balance \<V> (del_block bl) (\<Lambda> - 1)"
+  using remove_complete_block_pbd assms by blast 
+
+lemma b_gt_index:"\<b> \<ge> \<Lambda>"
+proof (rule ccontr)
+  assume blt: "\<not> \<b> \<ge> \<Lambda>"
+  obtain ps where "card ps = 2" and "ps \<subseteq> \<V>" using t_lt_order
+    by (meson obtain_t_subset_points) 
+  then have "size {#bl \<in># \<B>. ps \<subseteq> bl#} = \<Lambda>" using balanced by (simp add: points_index_def)
+  thus False using blt by auto 
+qed
+
+lemma remove_complete_blocks_set_pbd:
+  assumes "x < \<Lambda>"
+  assumes "size A = x"
+  assumes "A \<subset># \<B>"
+  assumes "\<And> a. a \<in># A \<Longrightarrow> a = \<V>"
+  shows "pairwise_balance \<V> (\<B> - A) (\<Lambda> - x)"
+using assms proof (induct "x" arbitrary: A)
+  case 0
+  then have beq: "\<B> - A = \<B>" by simp
+  have "pairwise_balance \<V> \<B> \<Lambda>" by (unfold_locales)
+  then show ?case using beq by simp
+next
+  case (Suc x)
+  then have "size A > 0" by simp
+  let ?A' = "A - {#\<V>#}"
+  have ss: "?A' \<subset># \<B>"
+    using Suc.prems(3) by (metis diff_subset_eq_self subset_mset.le_less_trans)
+  have sx: "size ?A' = x"
+    by (metis Suc.prems(2) Suc.prems(4) Suc_inject size_Suc_Diff1 size_eq_Suc_imp_elem)
+  have xlt: "x < \<Lambda>"
+    by (simp add: Suc.prems(1) Suc_lessD) 
+  have av: "\<And> a. a \<in># ?A' \<Longrightarrow> a = \<V>" using Suc.prems(4)
+    by (meson in_remove1_mset_neq)
+  then interpret pbd: pairwise_balance \<V> "(\<B> - ?A')" "(\<Lambda> - x)" using Suc.hyps sx ss xlt by simp
+  have "Suc x < \<b>" using Suc.prems(3)
+    by (metis Suc.prems(2) mset_subset_size) 
+  then have "\<b> - x \<ge> 2"
+    by linarith 
+  then have bgt: "size (\<B> - ?A') \<ge> 2" using ss size_Diff_submset
+    by (metis subset_msetE sx)
+  have ar: "add_mset \<V> (remove1_mset \<V> A) = A" using Suc.prems(2) Suc.prems(4)
+    by (metis insert_DiffM size_eq_Suc_imp_elem) 
+  then have db: "pbd.del_block \<V> = \<B> - A" by(simp add: pbd.del_block_def)
+  then have "\<B> - ?A' = \<B> - A + {#\<V>#}" using Suc.prems(2) Suc.prems(4)
+    by (metis (no_types, lifting) Suc.prems(3) ar add_diff_cancel_left' add_mset_add_single add_right_cancel 
+        pbd.del_block_def remove_1_mset_id_iff_notin ss subset_mset.lessE trivial_add_mset_remove_iff) 
+  then have "\<V> \<in># (\<B> - ?A')" by simp 
+  then have "pairwise_balance \<V> (\<B> - A) (\<Lambda> - (Suc x))" using db bgt diff_Suc_eq_diff_pred 
+      diff_commute pbd.remove_complete_block_pbd_alt by presburger
+  then show ?case by simp
+qed
+
+lemma remove_all_complete_blocks_pbd:
+  assumes "count \<B> \<V> < \<Lambda>"
+  shows "pairwise_balance \<V> (removeAll_mset \<V> \<B>) (\<Lambda> - (count \<B> \<V>))" (is "pairwise_balance \<V> ?B ?\<Lambda>")
+proof -
+  let ?A = "replicate_mset (count \<B> \<V>) \<V>"
+  let ?x = "size ?A"
+  have blt: "count \<B> \<V> \<noteq> \<b>" using b_gt_index assms
+    by linarith 
+  have xeq: "?x = count \<B> \<V>" by simp
+  have av: "\<And> a. a \<in># ?A \<Longrightarrow> a = \<V>"
+    by (metis in_replicate_mset)
+  have "?A \<subseteq># \<B>"
+    by (meson count_le_replicate_mset_subset_eq le_eq_less_or_eq)
+  then have "?A \<subset># \<B>" using blt
+    by (metis subset_mset.nless_le xeq) 
+  thus ?thesis using assms av xeq remove_complete_blocks_set_pbd
+    by presburger 
+qed
+
+(*
+lemma "count \<B> \<V> = \<Lambda> \<longleftrightarrow> (\<forall>bl \<in># \<B> . card bl = \<v> \<or> card bl = 1)" 
+proof (intro iffI)
+  assume "local.multiplicity \<V> = \<Lambda>"
+  show "\<forall>bl\<in>#\<B>. card bl = \<v> \<or> card bl = 1"
+  proof (auto)
+    fix bl assume "bl \<in># \<B>" and "card bl \<noteq> Suc 0"
+    show "card bl = \<v>"
+      sorry
+  qed
+next
+  assume "\<forall>bl\<in>#\<B>. card bl = \<v> \<or> card bl = 1"
+  show "local.multiplicity \<V> = \<Lambda>"
+    sorry
+qed
+
+*)
+end
+
+
+lemma removeAll_size_lt: "size (removeAll_mset C M) \<le> size M"
+  by (simp add: size_mset_mono)
 
 context ordered_pairwise_balance
 begin
 
-
-
-corollary general_nonuniform_fishers: 
+corollary general_nonuniform_fishers: (* Only valid on incomplete designs *)
   assumes "\<Lambda> > 0" 
+  assumes "\<And> bl. bl \<in># \<B> \<Longrightarrow> incomplete_block bl" (* i.e. not a super trivial design with only complete blocks *)
   shows "\<v> \<le> \<b>"
 proof -
-  have "mset \<B>s* = dual_blocks \<V> \<B>s" using dual_blocks_ordered_eq by simp
-  then interpret des: const_intersect_design "set [0..<(length \<B>s)]" "mset \<B>s*" \<Lambda> 
-    using assms dual_is_const_intersect_des by simp
-  interpret odes: ordered_const_intersect_design "[0..<length \<B>s]" "\<B>s*" \<Lambda> 
+  have "mset (\<B>s*) = dual_blocks \<V> \<B>s" using dual_blocks_ordered_eq by simp
+  then interpret des: simple_const_intersect_design "set [0..<(length \<B>s)]" "mset (\<B>s*)" \<Lambda> 
+    using assms dual_is_simp_const_inter_des by simp
+  interpret odes: simp_ordered_const_intersect_design "[0..<length \<B>s]" "\<B>s*" \<Lambda> 
     using distinct_upt des.wellformed by (unfold_locales) (blast)
-  have "length \<B>s* \<le> length [0..<length \<B>s]" using odes.general_fishers_inequality
+  have "length (\<B>s*) \<le> length [0..<length \<B>s]" using odes.general_fishers_inequality
     using odes.blocks_list_length odes.points_list_length by presburger
-  then have "length \<B>s* \<le> \<b>"
-    by simp 
-  then show ?thesis by (simp add: dual_blocks_len points_list_length)
+  then have "\<v> \<le> length \<B>s"
+    by (simp add: dual_blocks_len points_list_length) 
+  then show ?thesis by auto
 qed
+
+corollary general_nonuniform_fishers_comp: 
+  assumes "\<Lambda> > 0" 
+  assumes "count \<B> \<V> < \<Lambda>" (* i.e. not a super trivial design with only complete blocks and single blocks *)
+  shows "\<v> \<le> \<b>"
+proof -
+  define B where "B = (removeAll_mset \<V> \<B>)"
+  have b_smaller: "size B \<le> \<b>" using B_def removeAll_size_lt by simp
+  then have b_incomp: "\<And> bl. bl \<in># B \<Longrightarrow> card bl < \<v>"
+    using wellformed B_def by (simp add: psubsetI psubset_card_mono) 
+  have index_gt: "(\<Lambda> - (count \<B> \<V>)) > 0" using assms by simp 
+  interpret pbd: pairwise_balance \<V> B "(\<Lambda> - (count \<B> \<V>))"
+    using remove_all_complete_blocks_pbd B_def assms(2) by blast 
+  obtain Bs where m: "mset Bs = B"
+    using ex_mset by blast 
+  interpret opbd: ordered_pairwise_balance \<V>s Bs "(\<Lambda> - (count \<B> \<V>))" 
+    by (intro pbd.ordered_pbdI) (simp_all add: m distinct)
+  have "\<v> \<le> (size B)" using b_incomp opbd.general_nonuniform_fishers
+    using index_gt m by blast 
+  then show ?thesis using b_smaller m by auto
+qed
+
+end
+
+definition non_empty_col :: "('a :: {ring, one, zero}) mat \<Rightarrow> nat \<Rightarrow> bool" where
+"non_empty_col M j \<equiv> \<exists> k. k \<noteq> 0 \<and> k \<in>$ col M j"
+
+definition proper_inc_mat :: "('a :: {ring, one, zero}) mat \<Rightarrow> bool" where
+"proper_inc_mat M \<equiv> (dim_row M > 0 \<and> dim_col M > 0)"
+
+definition mat_rep_num :: "('a :: {ring, one, zero}) mat \<Rightarrow> nat \<Rightarrow> nat" where
+"mat_rep_num M i \<equiv> count_vec (row M i) 1"
+
+definition mat_point_index :: "('a :: {ring, one, zero}) mat \<Rightarrow> nat set \<Rightarrow> nat" where
+"mat_point_index M I \<equiv> card {j . j < dim_col M \<and> (\<forall> i \<in> I. M $$ (i, j) = 1)}"
+
+definition mat_inter_num :: "('a :: {ring, one, zero}) mat \<Rightarrow> nat \<Rightarrow> nat \<Rightarrow> nat" where
+"mat_inter_num M j1 j2 \<equiv> card {i . i < dim_row M \<and> M $$ (i, j1) = M $$ (i, j2) \<and> M $$ (i, j1) \<noteq> 0}"
+
+definition mat_block_size :: "('a :: {ring, one, zero}) mat \<Rightarrow> nat \<Rightarrow> nat" where
+"mat_block_size M j \<equiv> dim_row M - count_vec (col M j) 0"
+
+lemma vCons_set_contains_in: "a \<in> set\<^sub>v v \<Longrightarrow> set\<^sub>v (vCons a v) = set\<^sub>v v"
+  by (metis remdups_mset_singleton_sum set_mset_remdups_mset vec_mset_set vec_mset_vCons)
+
+lemma vCons_set_contains_add: "a \<notin> set\<^sub>v v \<Longrightarrow> set\<^sub>v (vCons a v) = set\<^sub>v v \<union> {a}"
+  using vec_mset_set vec_mset_vCons
+  by (metis insert_union set_mset_add_mset_insert) 
+
+lemma setv_vec_mset_not_in_iff: "a \<notin> set\<^sub>v v \<longleftrightarrow> a \<notin># vec_mset v"
+  by (simp add: vec_mset_set)
+
+lemma setv_not_in_count0_iff: "a \<notin> set\<^sub>v v \<longleftrightarrow> count_vec v a = 0"
+  using setv_vec_mset_not_in_iff
+  by (metis count_eq_zero_iff) 
+
+lemma sum_count_vec: 
+  assumes "finite (set\<^sub>v v)"
+  shows "(\<Sum> i \<in> set\<^sub>v v. count_vec v i) = dim_vec v"
+using assms proof (induct "v")
+  case vNil
+  then show ?case
+    by (simp add: count_vec_empty) 
+next
+  case (vCons a v)
+  then show ?case proof (cases "a \<in> set\<^sub>v v")
+    case True
+    have cv: "\<And> x. x \<in>(set\<^sub>v v) - {a} \<Longrightarrow> count_vec (vCons a v) x = count_vec v x" using count_vec_vCons
+      by (metis Diff_not_in) 
+    then have "sum (count_vec (vCons a v)) (set\<^sub>v (vCons a v)) =  sum (count_vec (vCons a v)) (set\<^sub>v v)" using vCons_set_contains_in
+      True by metis
+    also have "... = count_vec (vCons a v) a + sum (count_vec (vCons a v)) ((set\<^sub>v v) - {a})" using sum.remove True vCons.prems(1)
+      by (metis vCons_set_contains_in) 
+    also have "... = count_vec v a + 1 + sum (count_vec v) ((set\<^sub>v v) - {a})" using cv count_vec_vCons
+      by (metis sum.cong) 
+    also have "... = 1 + sum (count_vec v) ((set\<^sub>v v))"
+      by (metis (no_types, opaque_lifting) True ab_semigroup_add_class.add_ac(1) add.commute sum.remove vCons.prems vCons_set_contains_in)
+    also have "... = 1 + dim_vec v" using vCons.hyps
+      by (metis True vCons.prems vCons_set_contains_in) 
+    finally show ?thesis by simp
+  next
+    case False
+    then have cv: "\<And> x. x \<in>(set\<^sub>v v) \<Longrightarrow> count_vec (vCons a v) x = count_vec v x" using count_vec_vCons
+      by (metis) 
+    have f: "finite (set\<^sub>v v)" using vCons.prems False vCons_set_contains_add
+      by (metis Un_infinite) 
+    have "sum (count_vec (vCons a v)) (set\<^sub>v (vCons a v)) = count_vec (vCons a v) a + sum (count_vec (vCons a v)) (set\<^sub>v v)" 
+      using False by (metis Un_insert_right finite_Un sum.insert sup_bot_right vCons.prems vCons_set_contains_add) 
+    also have "... = count_vec v a + 1 + sum (count_vec v) ((set\<^sub>v v) )" using cv count_vec_vCons 
+      by (metis sum.cong) 
+    also have "... = 1 + sum (count_vec v) ((set\<^sub>v v))" using False setv_not_in_count0_iff
+      by (metis add_0) 
+    also have "... = 1 + dim_vec v" using vCons.hyps f by simp
+    finally show ?thesis by simp
+  qed
+qed
+
+lemma sum_setv_subset_eq: 
+  assumes "finite A"
+  assumes "set\<^sub>v v \<subseteq> A"
+  shows "(\<Sum> i \<in> set\<^sub>v v. count_vec v i) = (\<Sum> i \<in> A. count_vec v i)"
+proof -
+  have ni: "\<And> x. x \<notin> set\<^sub>v v \<Longrightarrow> count_vec v x = 0"
+    by (simp add: setv_not_in_count0_iff) 
+  have "(\<Sum> i \<in> A. count_vec v i) = (\<Sum> i \<in> A - (set\<^sub>v v). count_vec v i) + (\<Sum> i \<in> (set\<^sub>v v). count_vec v i)" 
+    using sum.subset_diff assms by auto
+  then show ?thesis using ni
+    by simp 
+qed
+
+lemma sum_count_vec_subset: 
+  assumes "finite A"
+  assumes "set\<^sub>v v \<subseteq> A"
+  shows "(\<Sum> i \<in> A. count_vec v i) = dim_vec v"
+  using sum_setv_subset_eq sum_count_vec finite_subset assms
+  by metis 
+
+lemma count_vec_sum_0_pair: 
+  assumes "set\<^sub>v (col M j) \<subseteq> {0, x}"
+  assumes "x \<noteq> 0"
+  shows "mat_block_size M j = count_vec (col M j) x"
+proof -
+  have "dim_vec (col M j) = (\<Sum> i \<in> set\<^sub>v (col M j). count_vec (col M j) i) " using sum_count_vec
+    by (simp add: mset_vec_same_size size_multiset_overloaded_eq vec_mset_set) 
+  also have "... = (\<Sum> i \<in> {0, x}. count_vec (col M j) i)" using assms  sum_setv_subset_eq
+    by (metis finite.emptyI finite.insertI)
+  finally have "dim_vec (col M j) = count_vec (col M j) 0 + count_vec (col M j) x"
+    by (simp add: assms(2)) 
+  thus ?thesis by (simp add: mat_block_size_def)
+qed
+
+lemma row_map_mat[simp]:
+  assumes "i < dim_row A" shows "row (map_mat f A) i = map_vec f (row A i)"
+  unfolding map_mat_def map_vec_def using assms by auto
+
+context zero_one_matrix 
+begin
+
+
+
+lemma mat_block_size_01: 
+  assumes "j < dim_col M"
+  shows "mat_block_size M j = count_vec (col M j) 1"
+  using count_vec_sum_0_pair
+  by (metis assms col_elems_ss01 less_numeral_extra(1) less_numeral_extra(3))
+
+lemma non_empty_col_01: 
+  assumes "j < dim_col M"
+  shows "non_empty_col M j \<longleftrightarrow> 1 \<in>$ col M j"
+proof (intro iffI)
+  assume "non_empty_col M j"
+  then obtain k where kn0: "k \<noteq> 0" and kin: "k \<in>$ col M j" using non_empty_col_def by auto
+  then have "k \<in> elements_mat M" using vec_contains_col_elements_mat assms
+    by metis 
+  then have "k = 1" using kn0
+    using elems01 by blast 
+  thus "1 \<in>$ col M j" using kin by simp
+next
+  assume "1 \<in>$ col M j"
+  then show "non_empty_col M j" using non_empty_col_def
+    by (metis zero_neq_one)
+qed
+
+lemma mat_inter_num_01: 
+  assumes "j1 < dim_col M" "j2 < dim_col M"
+  shows "mat_inter_num M j1 j2 = card {i . i < dim_row M \<and> M $$ (i, j1) = 1 \<and> M $$ (i, j2) = 1}"
+proof -
+  have "mat_inter_num M j1 j2 = card {i . i < dim_row M \<and> M $$ (i, j1) = M $$ (i, j2) \<and> M $$ (i, j1) \<noteq> 0}" 
+    by (simp add: mat_inter_num_def)
+  also have "... = card {i . i < dim_row M \<and> M $$ (i, j1) = M $$ (i, j2) \<and> M $$ (i, j1) = 1}" using assms
+    by (metis (mono_tags, opaque_lifting) zero_neq_one zero_one_matrix.elems_are_one_zero zero_one_matrix_axioms)
+  finally show ?thesis
+    by (smt (verit) Collect_cong) 
+qed
+
+
+lemma mat_rep_num_alt: 
+  assumes "i < dim_row M"
+  shows "mat_rep_num M i = card {j . j < dim_col M \<and> M $$ (i, j) = 1}"
+proof (simp add: mat_rep_num_def)
+  have eq: "\<And> j. (j < dim_col M \<and> M $$ (i, j) = 1) = (row M i $ j = 1 \<and> j < dim_vec (row M i))" 
+    using assms by auto
+  have "count_vec (row M i) 1 = card {j. (row M i) $ j = 1 \<and>  j < dim_vec (row M i)}"
+    using count_vec_alt[of "row M i" "1"] by simp
+  thus "count_vec (row M i) 1 = card {j. j < dim_col M \<and> M $$ (i, j) = 1}"
+    using eq Collect_cong by simp
+qed
+
+end
+
+abbreviation to_int_mat :: "'a :: finite mod_ring mat \<Rightarrow> int mat" where
+  "to_int_mat \<equiv> map_mat to_int_mod_ring"
+
+lemma map_mat_compose: "map_mat f (map_mat g A) = map_mat (f \<circ> g) A"
+  by (auto)
+
+lemma map_vec_compose: "map_vec f (map_vec g v) = map_vec (f \<circ> g) v"
+  by auto
+
+locale mat_mod = fixes m :: int
+assumes non_triv_m: "m > 1"
+begin 
+
+definition vec_mod :: "int vec \<Rightarrow> int vec" where
+"vec_mod v \<equiv> map_vec (\<lambda> x . x mod m) v"
+
+lemma vec_mod_dim[simp]: "dim_vec (vec_mod v) = dim_vec v"
+  using vec_mod_def by simp
+
+lemma vec_mod_index[simp]: "i < dim_vec v \<Longrightarrow> (vec_mod v) $ i = (v $ i) mod m"
+  using vec_mod_def by simp
+
+lemma vec_mod_index_same[simp]: "i < dim_vec v \<Longrightarrow> v $ i < m \<Longrightarrow> v $ i \<ge> 0 \<Longrightarrow> (vec_mod v) $ i = v $ i"
+  by simp
+
+lemma vec_setI2:
+  assumes "i < dim_vec v "
+  shows "v $ i \<in> set\<^sub>v v"
+  using assms
+  by (simp add: vec_setI) 
+
+lemma vec_mod_vec_same: 
+  assumes "set\<^sub>v v \<subseteq> {0..<m}"
+  shows "vec_mod v = v"
+  apply (intro eq_vecI, simp_all)
+  using assms vec_setI2 vec_mod_index_same
+  by (metis atLeastLessThan_iff subset_iff zmod_trivial_iff) 
+
+lemma vec_mod_set_vec_same:
+  assumes "set\<^sub>v v \<subseteq> {0..<m}"
+  shows "set\<^sub>v (vec_mod v) = set\<^sub>v v"
+  using vec_mod_vec_same assms by auto
+
+definition mat_mod :: "int mat \<Rightarrow> int mat"  where 
+"mat_mod M \<equiv> map_mat (\<lambda> x. x mod m) M"
+
+lemma mat_mod_dim[simp]: "dim_row (mat_mod M) = dim_row M" "dim_col (mat_mod M) = dim_col M"
+  using mat_mod_def by simp_all
+
+lemma mat_mod_index[simp]: 
+  assumes "i < dim_row M" "j < dim_col M"
+  assumes "M $$ (i, j) < m"
+  assumes "M $$ (i, j) \<ge> 0"
+  shows "mat_mod M $$ (i, j) = M $$ (i, j)"
+  by (simp add: assms mat_mod_def)
+
+lemma elements_matI2:
+  assumes "i < dim_row A" "j < dim_col A"
+  shows "A $$ (i, j) \<in> elements_mat A"
+  using assms by auto
+
+lemma mat_mod_eq_cond:
+  assumes "elements_mat M \<subseteq> {0..<m}"
+  shows "mat_mod M = M"
+proof (intro eq_matI, simp_all)
+  fix i j assume "i < dim_row M" "j < dim_col M"
+  then have "M $$ (i, j) \<in> {0..<m}"
+    using assms elements_matI2 by blast 
+  then show "local.mat_mod M $$ (i, j) = M $$ (i, j)"
+    using mat_mod_index
+    by (simp add: \<open>i < dim_row M\<close> \<open>j < dim_col M\<close>) 
+qed
+
+lemma mat_mod_eq_elements_cond:
+  assumes "elements_mat M \<subseteq> {0..<m}"
+  shows "elements_mat (mat_mod M) = elements_mat M"
+  using mat_mod_eq_cond assms by auto
+
+end
+
+
+locale inc_mat_mod = zero_one_matrix + mat_mod
+  
+begin
+
+abbreviation inc_mat_mod :: "int mat" ("M\<^sub>m") where 
+"M\<^sub>m \<equiv> mat_mod M"
+
+lemma floor_M_01: "i < dim_row M \<Longrightarrow> j < dim_col M \<Longrightarrow> \<lfloor>M $$ (i, j)\<rfloor> = 0 \<or> \<lfloor>M $$ (i, j)\<rfloor> = 1"
+by (metis elems_are_one_zero floor_one floor_zero)
+
+lemma inc_mat_mod_index: assumes "i < dim_row M" "j < dim_col M"
+  shows "M\<^sub>m $$ (i, j) = M $$ (i, j)"
+  using mat_mod_index assms(1) assms(2) elems_are_one_zero non_triv_m by fastforce 
+
+lemma mat_mod_elems: "elements_mat M\<^sub>m \<subseteq> {0, 1}"
+  using inc_mat_mod_index
+  by (metis (no_types, lifting) elements_matD floor_M_01 floor_of_int insert_iff inc_mat_mod_dim(1) inc_mat_mod_dim(2) subsetI)
+
+lemma mat_mod_non_empty_col_iff: 
+  assumes "i < dim_row M\<^sub>m" "j < dim_col M\<^sub>m"
+  shows "non_empty_col M\<^sub>m j \<longleftrightarrow> non_empty_col M j"
+proof (intro iffI)
+  assume "non_empty_col M\<^sub>m j"
+  then obtain k where kn0: "k \<noteq> 0" and kin: "k \<in>$ col M\<^sub>m j" using non_empty_col_def by auto
+  then have "k \<in> elements_mat M\<^sub>m" using vec_contains_col_elements_mat assms
+    by metis 
+  then have "k = 1" using kn0
+    using mat_mod_elems by blast 
+  then have "1 \<in>$ col M\<^sub>m j" using kin by simp
+  then have "1 \<in>$ col M j" using inc_mat_mod_index
+    by (metis assms(2) dim_col index_col inc_mat_mod_dim of_int_hom.hom_one vec_setE vec_setI) 
+  thus "non_empty_col M j" using non_empty_col_01 assms
+    by (simp) 
+next
+  assume "non_empty_col M j"
+  then have "1 \<in>$ col M j" using non_empty_col_01 assms mat_mod_dim by simp
+  then have "1 \<in>$ col M\<^sub>m j" using inc_mat_mod_index
+    by (metis assms(2) dim_col index_col inc_mat_mod_dim of_int_eq_1_iff vec_setE vec_setI)  
+  then show "non_empty_col M\<^sub>m j" using assms non_empty_col_def
+    by (metis zero_neq_one) 
+qed
+
+lemma mat_mod_proper_iff:  "proper_inc_mat M\<^sub>m  \<longleftrightarrow> proper_inc_mat M"
+  by (simp add: proper_inc_mat_def)
+
+lemma mat_mod_count_row_eq: 
+  assumes "i < dim_row M"
+  shows "count_vec (row M\<^sub>m i) x = count_vec (row M i) x"
+proof - 
+  have inj: "inj real_of_int"
+    by (simp add: of_int_hom.inj_f) 
+  have eq: "\<And> j. j \<in>{..<dim_col  M\<^sub>m} \<Longrightarrow> (row M\<^sub>m i) $ j = M\<^sub>m $$(i, j)" using assms
+    by (simp)
+  have eq2: "\<And> j. j \<in>{..<dim_col  M} \<Longrightarrow> (row M i) $ j = M $$(i, j)" using assms
+    by (simp)
+  have eq3: "\<And> j. j \<in># mset_set {..<dim_col M} \<Longrightarrow> M\<^sub>m $$ (i, j) = M $$ (i, j)" using assms inc_mat_mod_index by simp
+  then have "image_mset (\<lambda> j. M\<^sub>m $$(i, j)) (mset_set {..<dim_col M}) = (image_mset (\<lambda> j. M $$(i, j)) (mset_set {..<dim_col M}))"
+    by (meson multiset.map_cong0)
+  then have img_eq: "image_mset (real_of_int) (image_mset (\<lambda> j. M\<^sub>m $$(i, j)) (mset_set {..<dim_col M})) = (image_mset (\<lambda> j. M $$(i, j)) (mset_set {..<dim_col M}))"
+    by simp
+  have "count_vec (row M\<^sub>m i) x = count (vec_mset (row M\<^sub>m i)) x" by simp
+  also have "... = count (image_mset (vec_index (row M\<^sub>m i)) (mset_set {..<dim_vec (row M\<^sub>m i)})) x" using vec_mset_def
+    by metis 
+  also have "... = count (image_mset (vec_index (row M\<^sub>m i)) (mset_set {..<dim_col  M\<^sub>m })) x" using assms by simp
+  also have t: "... = count (image_mset (\<lambda> j. M\<^sub>m $$(i, j)) (mset_set {..<dim_col  M\<^sub>m})) x" using eq assms
+    by (metis (no_types, lifting) count_greater_zero_iff count_mset_set(3) image_mset_cong2 less_numeral_extra(3))
+  also have "... = count (image_mset (\<lambda> j. M\<^sub>m $$(i, j)) (mset_set {..<dim_col M})) x" using mat_mod_dim by simp 
+  also have 2: "... = count (image_mset (\<lambda> j. M $$(i, j)) (mset_set {..<dim_col M})) x" using img_eq inj count_image_mset_inj
+    by metis 
+  also have 1: "... = count (image_mset (\<lambda> j. (row M i) $ j) (mset_set {..<dim_col M})) x" using assms eq2
+    by (metis (no_types, lifting) count_greater_zero_iff count_mset_set(3) image_mset_cong2 less_numeral_extra(3))
+  also have "... = count (image_mset (vec_index (row M i)) (mset_set {..<dim_vec (row M i)})) x" using assms by simp
+  finally show ?thesis using vec_mset_def
+    by (metis 1 2 index_row(2) inc_mat_mod_dim(2) t) 
+qed
+
+lemma mat_mod_count_col_eq: 
+  assumes "j < dim_col M"
+  shows "count_vec (col M\<^sub>m j) x = count_vec (col M j) x"
+proof - 
+  have inj: "inj real_of_int"
+    by (simp add: of_int_hom.inj_f) 
+  have eq: "\<And> i. i \<in>{..<dim_row  M\<^sub>m} \<Longrightarrow> (col M\<^sub>m j) $ i = M\<^sub>m $$(i, j)" using assms
+    by (simp) 
+  have eq2: "\<And> i. i \<in>{..<dim_row  M} \<Longrightarrow> (col M j) $ i = M $$(i, j)" using assms
+    by (simp) 
+  have eq3: "\<And> i. i \<in># mset_set {..<dim_row M} \<Longrightarrow> M\<^sub>m $$ (i, j) = M $$ (i, j)" 
+    using assms inc_mat_mod_index by simp
+  then have "image_mset (\<lambda> i. M\<^sub>m $$(i, j)) (mset_set {..<dim_row M}) = (image_mset (\<lambda> i. M $$(i, j)) (mset_set {..<dim_row M}))"
+    by (meson multiset.map_cong0)
+  then have img_eq: "image_mset (real_of_int) (image_mset (\<lambda> i. M\<^sub>m $$(i, j)) (mset_set {..<dim_row M})) = (image_mset (\<lambda> i. M $$(i, j)) (mset_set {..<dim_row M}))"
+    by simp
+  have "count_vec (col M\<^sub>m j) x = count (vec_mset (col M\<^sub>m j)) x" by simp
+  also have "... = count (image_mset (vec_index (col M\<^sub>m j)) (mset_set {..<dim_vec (col M\<^sub>m j)})) x" using vec_mset_def
+    by metis 
+  also have "... = count (image_mset (vec_index (col M\<^sub>m j)) (mset_set {..<dim_row  M\<^sub>m })) x" using assms by simp
+  also have t: "... = count (image_mset (\<lambda> i. M\<^sub>m $$(i, j)) (mset_set {..<dim_row  M\<^sub>m})) x" using eq assms
+    by (metis (no_types, lifting) count_greater_zero_iff count_mset_set(3) image_mset_cong2 less_numeral_extra(3))
+  also have "... = count (image_mset (\<lambda> i. M\<^sub>m $$(i, j)) (mset_set {..<dim_row M})) x" using mat_mod_dim by simp 
+  also have 2: "... = count (image_mset (\<lambda> i. M $$(i, j)) (mset_set {..<dim_row M})) x" using img_eq inj count_image_mset_inj
+    by metis 
+  also have 1: "... = count (image_mset (\<lambda> i. (col M j) $ i) (mset_set {..<dim_row M})) x" using assms eq2
+    by (metis (no_types, lifting) count_greater_zero_iff count_mset_set(3) image_mset_cong2 less_numeral_extra(3))
+  also have "... = count (image_mset (vec_index (col M j)) (mset_set {..<dim_vec (col M j)})) x" using assms by simp
+  finally show ?thesis using vec_mset_def
+    by (metis "1" "2" dim_col inc_mat_mod_dim(1) t)
+qed
+
+lemma mat_mod_rep_num_eq: 
+  assumes "i < dim_row M"
+  shows "mat_rep_num M\<^sub>m i = mat_rep_num M i"
+  by (simp add: mat_mod_count_row_eq mat_rep_num_def assms)
+
+lemma mat_point_index_eq: 
+  assumes "\<And> i. i\<in> I \<Longrightarrow> i < dim_row M"
+  shows "mat_point_index M\<^sub>m I = mat_point_index M I"
+proof - 
+  have "\<And> j. j < dim_col M\<^sub>m \<Longrightarrow> j < dim_col M"
+    by (simp)
+  then have "\<And> j. j < dim_col M\<^sub>m \<Longrightarrow> ((\<forall> i \<in> I. M\<^sub>m $$ (i, j) = 1) \<longleftrightarrow> (\<forall> i \<in> I. M $$ (i, j) = 1))"
+    by (metis assms inc_mat_mod_index of_int_eq_1_iff)
+  then have eq: "\<And> j. ((j < dim_col M\<^sub>m \<and> (\<forall> i \<in> I. M\<^sub>m $$ (i, j) = 1)) \<longleftrightarrow> (j < dim_col M \<and> (\<forall> i \<in> I. M $$ (i, j) = 1)))"
+    by (metis inc_mat_mod_dim(2))
+  then show ?thesis by (simp add: mat_point_index_def)
+qed
+
+lemma mod_mat_inter_num_eq: 
+  assumes "j1 < dim_col M" "j2 < dim_col M"
+  shows "mat_inter_num M\<^sub>m j1 j2 = mat_inter_num M j1 j2"
+proof -
+  have "\<And> i. i < dim_row M\<^sub>m \<longleftrightarrow> i < dim_row M"
+    by (simp)
+  then have "\<And> i. i < dim_row M \<Longrightarrow> (M\<^sub>m $$ (i, j1) = M\<^sub>m $$ (i, j2) \<and> M\<^sub>m $$ (i, j1) \<noteq> 0) \<longleftrightarrow> (M $$ (i, j1) = M $$ (i, j2) \<and> M $$ (i, j1) \<noteq> 0)"
+    by (metis assms(1) assms(2) inc_mat_mod_index of_int_eq_iff of_int_hom.hom_zero)
+  then have "\<And> i. (i < dim_row M\<^sub>m \<and> M\<^sub>m $$ (i, j1) = M\<^sub>m $$ (i, j2) \<and> M\<^sub>m $$ (i, j1) \<noteq> 0) \<longleftrightarrow> (i < dim_row M \<and> M $$ (i, j1) = M $$ (i, j2) \<and> M $$ (i, j1) \<noteq> 0)"
+    by (metis inc_mat_mod_dim(1))
+  thus ?thesis by (simp add: mat_inter_num_def)
+qed
+
+lemma mod_mat_block_size: 
+  assumes "j < dim_col M"
+  shows "mat_block_size M\<^sub>m j = mat_block_size M j"
+proof -
+  have  "set\<^sub>v (col M\<^sub>m j) \<subseteq> {0, 1}" using mat_mod_elems assms
+    by (simp add: mat_mod_dim(2) subset_eq vec_contains_col_elements_mat) 
+  then have "mat_block_size M\<^sub>m j = count_vec (col M\<^sub>m j) 1"
+    using count_vec_sum_0_pair
+    by (metis zero_neq_one)
+  also have "... = count_vec (col M j) 1" using mat_mod_count_col_eq
+    by (simp add: assms)
+  finally show ?thesis by (simp add: assms mat_block_size_01)
+qed
+
+lemma inc_mat_mod_alt_def: 
+"M\<^sub>m = map_mat (\<lambda> x. \<lfloor>x\<rfloor> mod m) M"
+proof -
+  have fn: "(\<lambda> x. x mod m) \<circ> floor = (\<lambda> x. (floor x) mod m)" by auto
+  have  "M\<^sub>m = mat_mod (map_mat (floor) M)"
+    by simp
+  also have "... = map_mat (\<lambda> x. x mod m) (map_mat floor M)" by (simp add: mat_mod_def)
+  also have "... = map_mat ((\<lambda> x. x mod m) \<circ> floor) M" using map_mat_compose by auto
+  finally show ?thesis using fn
+    by (simp add: \<open>M\<^sub>m = map_mat (\<lambda>x. x mod m) (map_mat floor M)\<close> mat_eq_iff) 
+qed
+
+lemma inc_mat_mod_map_col: 
+  assumes "j < dim_col M"
+  shows "col M\<^sub>m j = map_vec (\<lambda> x. \<lfloor>x\<rfloor> mod m) (col M j)"
+  using inc_mat_mod_alt_def assms  by simp
+
+lemma inc_mat_mod_map_row: 
+  assumes "i < dim_row M"
+  shows "row M\<^sub>m i = map_vec (\<lambda> x. \<lfloor>x\<rfloor> mod m) (row M i)"
+  using  inc_mat_mod_alt_def assms by simp
+
+lemma inc_mat_mod_map_inv: 
+  shows "M = map_mat (\<lambda> x. real_of_int x) M\<^sub>m"
+  using  inc_mat_mod_alt_def inc_mat_mod_index by auto 
+
+lemma inc_mat_mod_map_col_inv: 
+  assumes "j < dim_col M"
+  shows "col M j = map_vec (real_of_int) (col M\<^sub>m j)"
+  using inc_mat_mod_map_inv assms
+  by (metis col_map_mat inc_mat_mod_dim(2)) 
+
+lemma inc_mat_mod_map_row_inv: 
+  assumes "i < dim_row M"
+  shows "row M i = map_vec (real_of_int) (row M\<^sub>m i)"
+  using inc_mat_mod_map_inv assms
+  by (metis row_map_mat inc_mat_mod_dim(1)) 
+
+(* CHECK WEIRD AUTO TRANSFER INDUCT RULE *)
+(* 
+lemma distinct_map:
+  "distinct(map f xs) = (distinct xs \<and> inj_on f (set xs))"*)
+lemma mat_mod_distinct_cols_iff: 
+"distinct (cols M) \<longleftrightarrow> distinct (cols M\<^sub>m)"
+proof (rule iffI)
+  assume "distinct (cols M)"
+  have map: "cols M\<^sub>m = map (map_vec (\<lambda> x. \<lfloor>x\<rfloor> mod m)) (cols M)"
+    using list_eq_iff_nth_eq inc_mat_mod_map_col inc_mat_mod_dim
+    by (metis (mono_tags, lifting) cols_length cols_nth length_map nth_map)
+  have "inj_on (map_vec (\<lambda> x. \<lfloor>x\<rfloor> mod m)) (set (cols M))" 
+    using inc_mat_mod_map_col by (intro inj_onI) (metis cols_length cols_nth inc_mat_mod_map_col_inv obtain_set_list_item) 
+  thus "distinct (cols M\<^sub>m)" using distinct_map map
+    using \<open>distinct (cols M)\<close> by auto 
+next
+  assume a2: "distinct (cols M\<^sub>m)"
+  have map: "cols M = map (map_vec (real_of_int)) (cols M\<^sub>m)"
+    using list_eq_iff_nth_eq inc_mat_mod_map_col_inv inc_mat_mod_dim
+    by (metis (mono_tags, lifting) cols_length cols_nth length_map nth_map)
+  have "inj_on (map_vec (real_of_int)) (set (cols M\<^sub>m))" 
+    by (intro inj_onI, simp add: of_int_hom.vec_hom_inj) 
+  thus "distinct (cols M)"
+    using a2 map distinct_map by auto
+qed
+
+end
+
+interpretation to_int_hom: inj_semiring_hom to_int_mod_ring
+  apply unfold_locales
+
+locale map_mat_inj_zero_hom = base: inj_zero_hom
+begin
+  sublocale inj_zero_hom "map_mat hom"
+  proof (unfold_locales)
+    fix p q :: "'a poly" assume "map_poly hom p = map_poly hom q"
+    from cong[of "\<lambda>p. coeff p _", OF refl this] show "p = q" by (auto intro: poly_eqI)
+  qed simp
+end
+locale mat_mod_type = mat_mod m
+  for m and ty :: "'a :: nontriv itself" +
+  assumes m: "m = CARD('a)"
+begin
+
+
+definition MM_Rel :: "int mat \<Rightarrow> 'a mod_ring mat \<Rightarrow> bool"
+  where "MM_Rel f f' \<equiv> (mat_mod f = to_int_mat f')"
+
+lemma eq_dim_row_MM_Rel[transfer_rule]: "(MM_Rel ===> (=)) dim_row dim_row "
+  by (metis (mono_tags) MM_Rel_def index_map_mat(2) mat_mod_dim(1) rel_funI)
+
+lemma eq_dim_col_MM_Rel[transfer_rule]: "(MM_Rel ===> (=)) dim_col dim_col "
+  unfolding MM_Rel_def rel_fun_def
+  by (metis index_map_mat(3) mat_mod_dim(2)) 
+
+lemma eq_MM_Rel[transfer_rule]: "(MM_Rel ===> MM_Rel ===> (=)) (\<lambda> f f' . mat_mod f = mat_mod f') (=) "
+  unfolding MM_Rel_def rel_fun_def apply (auto)
+  apply (intro eq_matI)
+apply (metis index_map_mat(1) index_map_mat(2) index_map_mat(3) to_int_mod_ring_hom.injectivity)
+  apply (metis index_map_mat(2))
+  by (metis index_map_mat(3))
+  
+lemma proper_inc_mat_MM_Rel[transfer_rule]: "(MM_Rel ===>  (=) ) (proper_inc_mat ) (proper_inc_mat)"
+  unfolding MM_Rel_def rel_fun_def
+  by (metis index_map_mat(2) index_map_mat(3) mat_mod_dim(1) mat_mod_dim(2) proper_inc_mat_def)  
+
+lemma mat_rep_num_MM_Rel[transfer_rule]: "(MM_Rel ===>  (=) ) (\<lambda> A. mat_rep_num (mat_mod A)  i = x) (\<lambda> B. mat_rep_num B i = x)"
+  unfolding MM_Rel_def rel_fun_def mat_rep_num_def
+
+end
+
+
+
+(* Include lemmas like 
+- count is the same
+- 
+*)
+
+
+
+locale even_town = ordered_simple_design +  
+  assumes even_groups: "bl \<in># \<B> \<Longrightarrow> even (card bl)"
+    and even_inters: "bl1 \<in># \<B> \<Longrightarrow> bl2 \<in># \<B> \<Longrightarrow> bl1 \<noteq> bl2 \<Longrightarrow> even (bl1 |\<inter>| bl2)"
+begin
+end
+
+locale odd_town = ordered_design + 
+  assumes odd_groups: "bl \<in># \<B> \<Longrightarrow> odd (card bl)"
+  and even_inters: "bl1 \<in># \<B> \<Longrightarrow> bl2 \<in># (\<B> - {#bl1#})  \<Longrightarrow> even (bl1 |\<inter>| bl2)"
+begin
+
+lemma odd_town_no_repeat_clubs: "distinct_mset \<B>"
+proof (rule ccontr)
+  assume "\<not> distinct_mset \<B>"
+  then obtain a where ain: "a \<in># \<B>" and countne: "count \<B> a \<noteq> 1"
+    by (auto simp add: distinct_mset_def)
+  then have "count \<B> a > 1"
+    using nat_less_le by auto 
+  then have ain2: "a \<in># (\<B> - {#a#})"
+    by (simp add: in_diff_count) 
+  then have "odd (a |\<inter>| a)" using odd_groups ain by simp
+  thus False using even_inters ain ain2
+    by blast 
+qed
+
+end
+
+sublocale odd_town \<subseteq> ordered_simple_design
+  using odd_town_no_repeat_clubs by (unfold_locales) (meson distinct_mset_def) 
+
+context odd_town 
+begin
+
+(* 
+
+What's required
+- Work in the vector space Z/Z2 instead of reals \<Longrightarrow> need to convert vectors to be of appropriate type.
+- conversion between real vector columns of N and appropriate type. 
+- Reasoning that vi * vj (dot) = 0 if i \<noteq> j as intersections are even, and = 1 if i = j (as club sizes are odd).
+- easy to see that in sum over all vectors = 0, if we times whole thing by vi (dot prod), all terms will disappear except 1. 
+Therefore this term must be 0.
+-Convert result bac to reals?
+*)
+
+
+
+
+
+lemma upper_bound_clubs: 
+  assumes "CARD('b::prime_card) = 2"
+  shows "\<b> \<le> \<v>"
+proof -
+  interpret vs: vec_space "TYPE('b::{prime_card} mod_ring)" \<v> . 
+  define N2 :: "'b mod_ring mat" where "N2 \<equiv> mat \<v> \<b> (\<lambda> (i, j). if (N $$ (i, j) = 1) then 1 else 0)"
+  have "\<And>i j. i < dim_row N \<Longrightarrow> j < dim_col N \<Longrightarrow> (N $$ (i, j)) = (to_int_mod_ring (N2 $$ (i, j)))"
+  proof -
+    fix i j
+    assume bounds: "i < dim_row N" "j < dim_col N"
+    thus "(N $$ (i, j)) = (to_int_mod_ring (N2 $$ (i, j)))"
+    proof (cases "N $$ (i, j) = 1")
+      case True
+      then have "N2 $$ (i, j) = 1" using N2_def bounds
+        using dim_row_is_v by fastforce
+      then show ?thesis
+        by (simp add: True) 
+    next
+      case False
+      then have "N $$ (i, j) = 0"
+        using bounds(1) bounds(2) elems_are_one_zero by blast
+      then have "N2 $$ (i, j) = 0" using N2_def bounds dim_row_is_v by fastforce
+      then show ?thesis
+        by (simp add: \<open>N $$ (i, j) = 0\<close>) 
+    qed
+  qed
+  have N2_elems_01: "elements_mat N2 \<subseteq> {0, 1}" apply (auto simp add: N2_def elements_matI)
+    using dim_row_mat(1) elements_matD by fastforce  
+  have dimv: "vs.dim  = \<v>" using vs.dim_is_n by simp
+  have N2_carrier_mat: "N2 \<in> carrier_mat \<v> \<b>" 
+    using N2_def by simp
+  then have length_cols: "length (cols (N2)) = \<b>" by simp
+  then have dim_col: "\<And> j. j \<in> {0..<\<b>} \<Longrightarrow> dim_vec ((cols N2) ! j) = \<v>" 
+    using N2_carrier_mat by simp
+  have fin: "finite (set (cols N2))"
+    by simp
+  have distinct_cols_N2: "distinct (cols N2)"
+
+    sorry
+  have cv: "set (cols N2) \<subseteq> carrier_vec \<v>"
+    using cols_dim dim_row_is_v N2_def
+    by (metis N2_carrier_mat carrier_matD(1)) 
+  have lidpt: "vs.lin_indpt (set (cols N2))" (* Easy set to relate to *)
+  proof (rule vs.finite_lin_indpt2, simp_all add: cv)
+    fix a assume comb: "vs.lincomb a (set (cols N2)) = 0\<^sub>v \<v>"
+    define c where ceq: "c = (\<lambda> i. a ((cols N2) ! i))"
+    then have listcomb: "vs.lincomb_list c (cols N2) = 0\<^sub>v \<v>" using vs.lincomb_as_lincomb_list_distinct[OF cv distinct_cols_N2] comb by simp
+    have dim: "\<And> j. j < \<b> \<Longrightarrow>  dim_vec (c j \<cdot>\<^sub>v (cols N2) ! j) = \<v>" using cv
+      using carrier_dim_vec nth_mem N2_carrier_mat by (simp) 
+    have "\<And> v. v \<in> set (cols N2) \<Longrightarrow> a v = 0"
+    proof -
+      fix v assume vin: "v \<in> set (cols N2)"
+      then obtain i where v_def: "cols N2 ! i = v" and ilt: "i < length (cols N2)"
+        by (metis in_set_conv_nth)
+      then have iin: "i \<in> {0..<\<b>}" using length_cols by simp
+      have int_num_0: "\<And> j. j \<in> {0..<\<b>} \<Longrightarrow> i \<noteq> j \<Longrightarrow> v \<bullet> (c j \<cdot>\<^sub>v (cols N2) ! j) = 0" sorry
+      have "(1 :: 'b :: {prime_card} mod_ring) \<noteq> 0"
+        by simp 
+      have "set\<^sub>v v \<subseteq> {0, 1}" using N2_elems_01 vin col_elems_subset_mat
+        by (metis cols_length cols_nth dual_order.trans ilt v_def) 
+      then have "\<And> i. i < \<v> \<Longrightarrow> v $ i = 0 \<or> v $ i = 1" 
+        apply auto 
+      have split : "{0..<\<v>} = {i . i <\<v> \<and> v $ i = 1} \<union> {i . i <\<v> \<and> v $ i = 0}" 
+      have same_1: "v \<bullet> v = 1"
+      proof (transfer)
+        have "v \<bullet> v = (\<Sum>l \<in> {0..<\<v>} . v $ l * v $ l)" using dim_col scalar_prod_def
+          by (metis (full_types) iin v_def) 
+        also have "... = (\<Sum>l \<in> {0..<\<v>} . v $ l * v $ l)
+        also have "... = (\<Sum> l \<in> {i . i <\<v> \<and> v $ i = 1}. v $ l * v $ l) + (\<Sum> l \<in> {i . i <\<v> \<and> v $ i = 0}. v $ l * v $ l)" using sum.split 
+      have "0 = v \<bullet> (vs.lincomb_list c (cols N2))"
+        using \<open>v \<in> set (cols N2)\<close> cv listcomb by auto 
+      also have "... = v \<bullet> (vs.sumlist (map (\<lambda>j. c j \<cdot>\<^sub>v (cols N2) ! j) [0..<\<b>]))"
+        using vs.lincomb_list_def length_cols by simp
+      also have "... = (\<Sum> l \<in> {0..<\<v>} . v $ l * (vs.sumlist (map (\<lambda>j. c j \<cdot>\<^sub>v (cols N2) ! j) [0..<\<b>])) $ l)"
+        by (metis (no_types) index_zero_vec(2) length_cols listcomb scalar_prod_def vs.lincomb_list_def)
+      also have "... = (\<Sum> l \<in> {0..<\<v>} . v $ l * (sum (\<lambda> j. (c j \<cdot>\<^sub>v (cols N2) ! j) $ l) {0..<\<b>}))"
+        using vs.sumlist_nth dim by simp
+      also have "... = (\<Sum> l \<in> {0..<\<v>} .  (\<Sum> j \<in> {0..<\<b>} . v $ l * (c j \<cdot>\<^sub>v (cols N2) ! j) $ l))"
+        by (simp add: sum_distrib_left) 
+      also have "... = (\<Sum> j \<in> {0..<\<b>} . (\<Sum> l \<in> {0..<\<v>} .  v $ l * (c j \<cdot>\<^sub>v (cols N2) ! j) $ l))"
+        using sum.swap[of  "\<lambda> l j. v $ l * (c j \<cdot>\<^sub>v (cols N2) ! j) $ l"  "{0..<\<b>}" "{0..<\<v>}"] by simp
+      also have "... = (\<Sum> j \<in> {0..<\<b>} .  v \<bullet> (c j \<cdot>\<^sub>v (cols N2) ! j) )" using scalar_prod_def dim_col
+        by (smt (verit) index_smult_vec(2) sum.cong) 
+      also have "... = v \<bullet> (c i \<cdot>\<^sub>v v) + (\<Sum> j \<in> {0..<\<b>} - {i}.  v \<bullet> (c j \<cdot>\<^sub>v (cols N2) ! j) )" 
+        using iin sum.remove[of "{0..<\<b>}" "i" "\<lambda> j. v \<bullet> (c j \<cdot>\<^sub>v (cols N2) ! j)"] v_def by simp
+      also have "... = v \<bullet> (c i \<cdot>\<^sub>v v)" using int_num_0 by simp
+      also have "... = (c i) * (v \<bullet> v)" using scalar_prod_smult_distrib
+        by (simp add: \<open>cols N2 ! i = v\<close>)
+      finally have "0 = (c i)" using same_1 by simp
+      then show "a v = 0"
+        using ceq \<open>cols N2 ! i = v\<close> by simp 
+    qed
+    then show "\<forall>v\<in>set (cols N2). a v = 0" by simp
+  qed
+  show ?thesis using distinct_cols_N2 vs.lin_indpt_dim_col_lt_dim[of "N2" "\<b>"] lidpt N2_carrier_mat dimv by simp
+qed
+
 
 end
 

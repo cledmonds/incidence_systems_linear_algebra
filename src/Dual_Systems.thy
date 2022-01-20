@@ -168,6 +168,21 @@ proof -
   thus ?thesis by (simp add: point_replication_number_def)
 qed
 
+lemma dual_blocks_size_is_rep_obtain: 
+  assumes "bl \<in># dual_blocks \<V> \<B>s"
+  obtains x where "x \<in> \<V>" and "card bl = \<B> rep x"
+proof -
+  obtain j where jlt1: "j < length \<B>s*" and bleq: "\<B>s* ! j = bl"
+    by (metis assms dual_blocks_ordered_eq in_mset_conv_nth) 
+  then have jlt: "j < \<v>"
+    by (simp add: dual_blocks_len points_list_length) 
+  let ?x = "\<V>s ! j"
+  have xin: "?x \<in> \<V>" using jlt
+    by (simp add: valid_points_index) 
+  have "card bl = \<B> rep ?x" using dual_blocks_size_is_rep jlt1 bleq by auto
+  thus ?thesis using xin that by auto 
+qed
+
 lemma dual_blocks_rep_is_size:
   assumes "i \<in> {0..<length \<B>s}"
   shows "(mset \<B>s*) rep i = card (\<B>s ! i)"
@@ -354,7 +369,30 @@ locale simple_const_intersect_design = const_intersect_design + simple_design
 context pairwise_balance
 begin
 
+lemma ordered_pbdI: 
+  assumes "\<B> = mset \<B>s" and "\<V> = set \<V>s" and "distinct \<V>s"
+  shows "ordered_pairwise_balance \<V>s \<B>s \<Lambda>"
+proof -
+  interpret ois: ordered_incidence_system \<V>s \<B>s 
+    using ordered_incidence_sysII assms finite_incidence_system_axioms by blast 
+  show ?thesis using b_non_zero blocks_nempty assms t_lt_order balanced  by (unfold_locales)(simp_all)
+qed
 
+lemma count_complete_lt_balance: "count \<B> \<V> \<le> \<Lambda>"
+proof (rule ccontr)
+  assume a: "\<not> count \<B> \<V> \<le> \<Lambda>"
+  then have assm: "count \<B> \<V> > \<Lambda>"
+    by simp
+  then have gt: "size {# bl \<in># \<B> . bl = \<V>#} > \<Lambda>"
+    by (simp add: count_size_set_repr) 
+  obtain ps where psss: "ps \<subseteq> \<V>" and pscard: "card ps = 2" using t_lt_order
+    by (meson obtain_t_subset_points) 
+  then have "{# bl \<in># \<B> . bl = \<V>#} \<subseteq># {# bl \<in># \<B> . ps \<subseteq> bl #}"
+    by (metis a balanced le_refl points_index_count_min) 
+  then have "size {# bl \<in># \<B> . bl = \<V>#} \<le> \<B> index ps " 
+    using points_index_def[of \<B> ps] size_mset_mono by simp
+  thus False using pscard psss balanced gt by auto
+qed
 
 end
 
@@ -445,11 +483,64 @@ proof -
       using dual_blocks_const_intersect b1eq b2eq j1lt j2lt by simp 
   qed
 qed
-(*
+
+lemma eq_index_rep_imp_complete: 
+  assumes "\<Lambda> = \<B> rep x"
+  assumes "x \<in> \<V>"
+  assumes "bl \<in># \<B>"
+  assumes "x \<in> bl"
+  shows "card bl = \<v>"
+proof -
+  have "\<And> y. y \<in> \<V> \<Longrightarrow> y \<noteq> x \<Longrightarrow> card {x, y} = 2 \<and> {x, y} \<subseteq> \<V>" using assms by simp
+  then have size_eq: "\<And> y. y \<in> \<V> \<Longrightarrow> y \<noteq> x \<Longrightarrow> size {# b \<in># \<B> . {x, y} \<subseteq> b#} = size {# b \<in># \<B> . x \<in> b#}"
+    using point_replication_number_def balanced points_index_def assms
+    by metis 
+  have "\<And> y b. y \<in> \<V> \<Longrightarrow> y \<noteq> x \<Longrightarrow> b \<in># \<B> \<Longrightarrow> {x, y} \<subseteq> b \<longrightarrow> x \<in> b" by simp
+  then have "\<And> y. y \<in> \<V> \<Longrightarrow> y \<noteq> x \<Longrightarrow> {# b \<in># \<B> . {x, y} \<subseteq> b#} \<subseteq># {# b \<in># \<B> . x \<in> b#}" 
+    using multiset_filter_mono2 assms by auto
+  then have eq_sets: "\<And> y. y \<in> \<V> \<Longrightarrow> y \<noteq> x \<Longrightarrow> {# b \<in># \<B> . {x, y} \<subseteq> b#} = {# b \<in># \<B> . x \<in> b#}" using size_eq
+    by (smt (z3) Diff_eq_empty_iff_mset cancel_comm_monoid_add_class.diff_cancel size_Diff_submset size_empty size_eq_0_iff_empty subset_mset.antisym) 
+  have "bl \<in># {# b \<in># \<B> . x \<in> b#}" using assms by simp
+  then have "\<And> y. y \<in> \<V> \<Longrightarrow> y \<noteq> x \<Longrightarrow> {x, y} \<subseteq> bl" using eq_sets
+    by (metis (no_types, lifting) Multiset.set_mset_filter mem_Collect_eq) 
+  then have "\<And> y. y \<in> \<V> \<Longrightarrow> y \<in> bl" using assms by blast 
+  then have "bl = \<V>" using wellformed assms(3) by blast 
+  thus ?thesis by simp
+qed
+
+lemma incomplete_index_strict_lt_rep:
+  assumes "\<And> bl. bl \<in># \<B> \<Longrightarrow> incomplete_block bl" 
+  assumes "x \<in> \<V>"
+  assumes "\<Lambda> > 0"
+  shows "\<Lambda> < \<B> rep x"
+proof (rule ccontr)
+  assume "\<not> (\<Lambda> < \<B> rep x)"
+  then have a: "\<Lambda> \<ge> \<B> rep x"
+    by simp
+  then have "\<Lambda> = \<B> rep x" using const_index_lt_rep
+    using assms(2) le_antisym by blast 
+  then obtain bl where xin: "x \<in> bl" and blin: "bl \<in># \<B>"
+    by (metis assms(3) rep_number_g0_exists) 
+  thus False using assms eq_index_rep_imp_complete incomplete_alt_size
+    using \<open>\<Lambda> = \<B> rep x\<close> nat_less_le by blast  
+qed
+
 lemma dual_is_simp_const_inter_des: 
   assumes "\<Lambda> > 0"
-  shows 
-*)
+  assumes "\<And> bl. bl \<in># \<B> \<Longrightarrow> incomplete_block bl"  
+  shows "simple_const_intersect_design {0..<(length \<B>s)} (dual_blocks \<V> \<B>s) \<Lambda>"
+proof -
+  interpret d: const_intersect_design "{0..<(length \<B>s)}" "(dual_blocks \<V> \<B>s)"  "\<Lambda>"
+    using assms dual_is_const_intersect_des by simp
+(* Show that m < block size for all blocks *)
+  have "\<And> x. x \<in> \<V> \<Longrightarrow> \<Lambda> < \<B> rep x" using assms incomplete_index_strict_lt_rep
+    by blast 
+  then have "\<And> bl. bl \<in># (dual_blocks \<V> \<B>s) \<Longrightarrow> \<Lambda> < card bl"
+    by (metis dual_blocks_size_is_rep_obtain) 
+  then interpret s: simple_design "{0..<(length \<B>s)}" "(dual_blocks \<V> \<B>s)" 
+    using d.simple_const_inter_block_size by simp
+  show ?thesis by (unfold_locales)
+qed
 end
 
 lemma count_list_mset: "count_list xs x = count (mset xs) x"

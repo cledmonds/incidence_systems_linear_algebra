@@ -459,7 +459,7 @@ lemma dim_vec_vCons_ne_0: "dim_vec (vCons a v) > 0"
   by (cases v) simp_all
 
 lemma sum_vec_vCons_lt: 
-  assumes "\<And> i. i < dim_vec (vCons a v) \<Longrightarrow> (vCons a v) $ i \<le> (n ::real)"
+  assumes "\<And> i. i < dim_vec (vCons a v) \<Longrightarrow> (vCons a v) $ i \<le> (n ::int)"
   assumes "sum_vec v \<le> m"
   shows "sum_vec (vCons a v) \<le> n + m"
 proof -
@@ -472,7 +472,7 @@ proof -
 qed
 
 lemma sum_vec_one_zero: 
-  assumes "\<And> i. i < dim_vec (v :: real vec) \<Longrightarrow> v $ i \<le> (1 ::real)"
+  assumes "\<And> i. i < dim_vec (v :: int vec) \<Longrightarrow> v $ i \<le> (1 ::int)"
   shows "sum_vec v \<le> dim_vec v"
   using assms 
 proof (induct v)
@@ -480,9 +480,9 @@ proof (induct v)
   then show ?case by simp
 next
   case (vCons a v)
-  then have "(\<And> i. i < dim_vec v \<Longrightarrow> v $ i \<le> (1 ::real))"
+  then have "(\<And> i. i < dim_vec v \<Longrightarrow> v $ i \<le> (1 ::int))"
     using vCons.prems by force
-  then have lt: "sum_vec v \<le> real (dim_vec v)" by (simp add: vCons.hyps)  
+  then have lt: "sum_vec v \<le> int (dim_vec v)" by (simp add: vCons.hyps)  
   then show ?case using sum_vec_vCons_lt lt vCons.prems by simp
 qed
 
@@ -564,7 +564,7 @@ proof -
 qed
 
 lemma count_vec_sum_ones: 
-  assumes "\<And> i. i < dim_vec (v :: real vec) \<Longrightarrow> v $ i = 1 \<or> v $ i = 0"
+  assumes "\<And> i. i < dim_vec (v :: int vec) \<Longrightarrow> v $ i = 1 \<or> v $ i = 0"
   shows "count_vec v 1 = sum_vec v"
   using assms 
 proof (induct v)
@@ -586,7 +586,7 @@ proof (induct v)
 qed
 
 lemma count_vec_two_elems: 
-  assumes "\<And> i. i < dim_vec v \<Longrightarrow> v $ i = (1 ::real) \<or> v $ i = 0"
+  assumes "\<And> i. i < dim_vec v \<Longrightarrow> v $ i = (1 ::int) \<or> v $ i = 0"
   shows "count_vec v 1 + count_vec v 0 = dim_vec v"
 proof -
   have ss: "vec_set v \<subseteq> {0, 1}" using assms by (auto simp add: vec_set_def)
@@ -603,13 +603,13 @@ proof -
 qed
 
 lemma count_vec_sum_zeros: 
-  assumes "\<And> i. i < dim_vec (v :: real vec) \<Longrightarrow> v $ i = 1 \<or> v $ i = 0"
+  assumes "\<And> i. i < dim_vec (v :: int vec) \<Longrightarrow> v $ i = 1 \<or> v $ i = 0"
   shows "count_vec v 0 = dim_vec v - sum_vec v"
   using count_vec_two_elems assms count_vec_sum_ones
   by force 
 
 lemma count_vec_sum_ones_alt: 
-  assumes "vec_set v \<subseteq> {0::real, 1}"
+  assumes "vec_set v \<subseteq> {0::int, 1}"
   shows "count_vec v 1 = sum_vec v"
 proof -
   have "\<And> i. i < dim_vec v \<Longrightarrow> v $ i = 1 \<or> v $ i = 0" using assms
@@ -638,6 +638,34 @@ lemma vec_contains_count_gt1_iff: "a \<in>$ v \<longleftrightarrow> count_vec v 
 
 lemma vec_count_eq_list_count: "count (mset xs) a = count_vec (vec_of_list xs) a"
   by (simp add: list_vec mset_vec_eq_mset_list) 
+
+lemma vec_contains_col_elements_mat: 
+  assumes "j < dim_col M"
+  assumes "a \<in>$ col M j"
+  shows "a \<in> elements_mat M"
+proof -
+  have "dim_vec (col M j) = dim_row M" by simp
+  then obtain i where ilt: "i < dim_row M" and "(col M j) $ i = a" using vec_setE
+    by (metis assms(2))
+  then have "M $$ (i, j) = a"
+    by (simp add: assms(1)) 
+  thus ?thesis using assms(1) ilt
+    by blast
+qed
+
+lemma vec_contains_row_elements_mat: 
+  assumes "i < dim_row M"
+  assumes "a \<in>$ row M i"
+  shows "a \<in> elements_mat M"
+proof -
+  have "dim_vec (row M i) = dim_col M" by simp
+  then obtain j where jlt: "j < dim_col M" and "(row M i) $ j = a" using vec_setE
+    by (metis assms(2))
+  then have "M $$ (i, j) = a"
+    by (simp add: assms(1)) 
+  thus ?thesis using assms(1) jlt
+    by blast
+qed
 
 definition all_ones_vec ::  "nat \<Rightarrow> 'a :: {zero,one} vec" ("u\<^sub>v") where
   "u\<^sub>v n \<equiv> vec n (\<lambda> i. 1)"
@@ -698,7 +726,7 @@ lemma elem_permutation_of_mset_empty_iff: "xs \<in> permutations_of_multiset A \
 
 
 (* Incidence vectors *)
-definition inc_vec_of :: "'a list \<Rightarrow> 'a set \<Rightarrow> real vec" where
+definition inc_vec_of :: "'a list \<Rightarrow> 'a set \<Rightarrow> int vec" where
 "inc_vec_of Vs bl \<equiv> vec (length Vs) (\<lambda> i . if (Vs ! i) \<in> bl then 1 else 0)"
 
 lemma inc_vec_one_zero_elems: "set\<^sub>v (inc_vec_of Vs bl) \<subseteq> {0, 1}"
@@ -722,7 +750,7 @@ lemma inc_vec_index_zero_iff: "i < length Vs \<Longrightarrow> inc_vec_of Vs bl 
 
 (* Function to find incidence matrix *)
 
-definition inc_mat_of :: "'a list \<Rightarrow> 'a set list \<Rightarrow> real mat" where
+definition inc_mat_of :: "'a list \<Rightarrow> 'a set list \<Rightarrow> int mat" where
 "inc_mat_of Vs Bs \<equiv> mat (length Vs) (length Bs) (\<lambda> (i,j) . if (Vs ! i) \<in> (Bs ! j) then 1 else 0)"
 
 lemma inc_mat_one_zero_elems: "elements_mat (inc_mat_of Vs Bs) \<subseteq> {0, 1}"
@@ -733,7 +761,7 @@ lemma fin_incidence_mat_elems: "finite (elements_mat (inc_mat_of Vs Bs))"
 
 lemma inc_matrix_elems_max_two: "card (elements_mat (inc_mat_of Vs Bs)) \<le> 2"
 proof -
-  have "card {0 ::real , 1} = 2" by auto
+  have "card {0 ::int , 1} = 2" by auto
   thus ?thesis using card_mono inc_mat_one_zero_elems
     by (metis finite.emptyI finite.insertI) 
 qed
@@ -879,7 +907,7 @@ end
 
 (* Most incidence matrices are 0, 1 representations *)
 locale zero_one_matrix = 
-  fixes matrix :: "real mat" ("M")
+  fixes matrix :: "int mat" ("M")
   assumes elems01: "elements_mat M \<subseteq> {0, 1}"
 begin
 
@@ -889,7 +917,7 @@ definition map_to_points:: "nat set" where
 lemma map_to_points_card: "card (map_to_points) = dim_row M"
   by (simp add: map_to_points_def)
 
-definition map_col_to_block :: "real vec  \<Rightarrow> nat set" where
+definition map_col_to_block :: "int vec  \<Rightarrow> nat set" where
 "map_col_to_block c \<equiv> { i \<in> {..<dim_vec c} . c $ i = 1}"
 
 lemma map_col_to_block_alt: "map_col_to_block c = {i . i < dim_vec c \<and> c$ i = 1}"
@@ -905,7 +933,7 @@ lemma map_col_to_block_elem_not: "vec_set c \<subseteq> {0, 1} \<Longrightarrow>
   apply (auto simp add: map_col_to_block_alt)
   by (meson insert_iff singleton_iff subset_iff vec_setI)
 
-definition map_block_to_col :: "nat set \<Rightarrow> real vec" where
+definition map_block_to_col :: "nat set \<Rightarrow> int vec" where
 "map_block_to_col bl \<equiv> vec (dim_row M) (\<lambda> x . (if x \<in> bl then 1 else 0))"
 
 definition map_to_blocks :: "nat set multiset" where
@@ -1205,11 +1233,20 @@ qed
   
 end
 
-interpretation zero_one_matrix "inc_mat_of Vs Bs"
+
+lemma inc_mat_of_01_mat: "zero_one_matrix (inc_mat_of Vs Bs)"
   by (unfold_locales) (simp add: inc_mat_one_zero_elems) 
 
-lemma inc_mat_ordered_points_Vs: "map ((!) Vs) (map_to_points_ordered inc_mat Vs Bs) = Vs"
-  by (auto simp add: map_to_points_ordered_def  map_nth)
+lemma inc_mat_ordered_points_Vs: "map ((!) Vs) (zero_one_matrix.map_to_points_ordered (inc_mat_of Vs Bs)) = Vs"
+proof -
+  interpret mat: zero_one_matrix "(inc_mat_of Vs Bs)"
+    using inc_mat_of_01_mat
+    by auto 
+  have "dim_row (inc_mat_of Vs Bs) = length Vs" by simp
+  then have "zero_one_matrix.map_to_points_ordered (inc_mat_of Vs Bs) = [0..<length Vs]" 
+    by (simp add: mat.map_to_points_ordered_def)
+  thus ?thesis using map_nth by auto
+qed
 
 lemma (in zero_one_matrix) rev_map_points_blocks: "inc_mat_of (map_to_points_ordered) (map_to_blocks_ordered) = M"
   by(auto simp add: inc_mat_of_def M_def_from_lists dim_col_length dim_row_length)
@@ -1238,6 +1275,14 @@ proof -
       by simp 
     show "distinct \<V>s" using assms permutations_of_setD(2) by auto
   qed
+qed
+
+lemma ordered_incidence_sysII: 
+  assumes "finite_incidence_system \<V> \<B>" and "set \<V>s = \<V>" and "distinct \<V>s" and "mset \<B>s = \<B>"
+  shows "ordered_incidence_system \<V>s \<B>s"
+proof -
+  interpret fisys: finite_incidence_system "set \<V>s" "mset \<B>s" using assms by simp
+  show ?thesis using fisys.wellformed assms by (unfold_locales) (simp_all)
 qed
 
 context ordered_incidence_system 
@@ -1348,8 +1393,11 @@ qed
 
 (* Incidence Matrix *)
 
-abbreviation N :: "real mat" where
+abbreviation N :: "int mat" where
 "N \<equiv> inc_mat_of \<V>s \<B>s"
+
+sublocale mat: zero_one_matrix "N"
+  using inc_mat_of_01_mat .
 
 lemma N_alt_def_dim: "N = mat \<v> \<b> (\<lambda> (i,j) . if (incident (\<V>s ! i) (\<B>s ! j)) then 1 else 0) " 
   using incidence_cond_indexed inc_mat_of_def 
@@ -1381,11 +1429,11 @@ lemma dim_vec_col: "dim_vec (col N i) = \<v>"
 
 lemma mat_row_elems: "i < \<v> \<Longrightarrow> vec_set (row N i) \<subseteq> {0, 1}"
   using points_list_length
-  by (simp add: dim_row_is_v dim_row_length row_elems_ss01) 
+  by (simp add: dim_row_is_v mat.dim_row_length mat.row_elems_ss01) 
 
 lemma mat_col_elems: "j < \<b> \<Longrightarrow> vec_set (col N j) \<subseteq> {0, 1}"
   using blocks_list_length
-  by (metis col_elems_ss01 dim_col_is_b)
+  by (metis mat.col_elems_ss01 dim_col_is_b)
 
 lemma matrix_point_in_block_one: "i < \<v> \<Longrightarrow> j < \<b> \<Longrightarrow> (\<V>s ! i)\<in> (\<B>s ! j) \<Longrightarrow>N $$ (i, j) = 1"
   by (metis inc_matrix_point_in_block_one points_list_length blocks_list_length )   
@@ -1466,11 +1514,11 @@ qed
 
 lemma matrix_col_to_block_v2: 
   assumes "j < \<b>"
-  shows "\<B>s ! j = (\<lambda> k . \<V>s ! k) ` map_col_to_block (col N j)"
-  using matrix_col_to_block map_col_to_block_def assms
+  shows "\<B>s ! j = (\<lambda> k . \<V>s ! k) ` mat.map_col_to_block (col N j)"
+  using matrix_col_to_block mat.map_col_to_block_def assms
   by (simp add: points_list_length)
 
-lemma matrix_col_in_blocks: "j < \<b> \<Longrightarrow> (!) \<V>s ` map_col_to_block (col N j) \<in># \<B>"
+lemma matrix_col_in_blocks: "j < \<b> \<Longrightarrow> (!) \<V>s ` mat.map_col_to_block (col N j) \<in># \<B>"
   using matrix_col_to_block_v2 by (metis (no_types, lifting) valid_blocks_index) 
 
 lemma N_row_def: "j < \<b> \<Longrightarrow> i < \<v> \<Longrightarrow> (row N i) $ j = (if (\<V>s ! i \<in> \<B>s ! j) then 1 else 0)"
@@ -1511,12 +1559,12 @@ lemma point_rep_mat_row:
 proof -
   have 1: "vec_mset (row N i) = image_mset (\<lambda> x . if ((\<V>s ! i) \<in> x) then 1 else 0) \<B>"
     using N_row_mset_blocks_img assms by auto 
-  have "\<And>bl. bl \<in># \<B> \<Longrightarrow> (\<lambda>x .0 ::real) bl \<noteq> 1" using zero_neq_one 
+  have "\<And>bl. bl \<in># \<B> \<Longrightarrow> (\<lambda>x .0 ::int) bl \<noteq> 1" using zero_neq_one 
     by simp 
-  then have "count (image_mset (\<lambda> x . if ((\<V>s ! i) \<in> x) then 1 else (0 :: real )) \<B>) 1 = 
+  then have "count (image_mset (\<lambda> x . if ((\<V>s ! i) \<in> x) then 1 else (0 :: int )) \<B>) 1 = 
     size (filter_mset (\<lambda> x . (\<V>s ! i) \<in> x) \<B>)"
-    using count_mset_split_image_filter[of "\<B>" "1" "\<lambda> x . (0 :: real)" "\<lambda> x . (\<V>s ! i) \<in> x"] by simp
-  then have "count (image_mset (\<lambda> x . if ((\<V>s ! i) \<in> x) then 1 else (0 :: real )) \<B>) 1
+    using count_mset_split_image_filter[of "\<B>" "1" "\<lambda> x . (0 :: int)" "\<lambda> x . (\<V>s ! i) \<in> x"] by simp
+  then have "count (image_mset (\<lambda> x . if ((\<V>s ! i) \<in> x) then 1 else (0 :: int )) \<B>) 1
     = \<B> rep (\<V>s ! i)" by (simp add: point_rep_number_alt_def)
   thus ?thesis
     by (simp add: 1) 
@@ -1535,11 +1583,11 @@ proof -
   have 1: "vec_mset (col N j) = image_mset (\<lambda> x. if (x \<in> (\<B>s ! j)) then 1 else 0) (mset_set \<V>)"
     using N_col_mset_point_set_img assms by auto
   have val_b: "\<B>s ! j \<in># \<B>" using assms valid_blocks_index by auto 
-  have "\<And> x. x \<in># mset_set \<V> \<Longrightarrow> (\<lambda>x . (0 :: real)) x \<noteq> 1" using zero_neq_one by simp
-  then have "count (image_mset (\<lambda> x. if (x \<in> (\<B>s ! j)) then 1 else (0 :: real)) (mset_set \<V>)) 1 = 
+  have "\<And> x. x \<in># mset_set \<V> \<Longrightarrow> (\<lambda>x . (0 :: int)) x \<noteq> 1" using zero_neq_one by simp
+  then have "count (image_mset (\<lambda> x. if (x \<in> (\<B>s ! j)) then 1 else (0 :: int)) (mset_set \<V>)) 1 = 
     size (filter_mset (\<lambda> x . x \<in> (\<B>s ! j)) (mset_set \<V>))"
-    using count_mset_split_image_filter [of "mset_set \<V>" "1" "(\<lambda> x . (0 :: real))" "\<lambda> x . x \<in> \<B>s ! j"] by simp
-  then have "count (image_mset (\<lambda> x. if (x \<in> (\<B>s ! j)) then 1 else (0 :: real)) (mset_set \<V>)) 1 = card (\<B>s ! j)"
+    using count_mset_split_image_filter [of "mset_set \<V>" "1" "(\<lambda> x . (0 :: int))" "\<lambda> x . x \<in> \<B>s ! j"] by simp
+  then have "count (image_mset (\<lambda> x. if (x \<in> (\<B>s ! j)) then 1 else (0 :: int)) (mset_set \<V>)) 1 = card (\<B>s ! j)"
     using val_b block_size_alt by (simp add: finite_sets)
   thus ?thesis by (simp add: 1)
 qed
@@ -1625,13 +1673,13 @@ qed
 lemma transpose_N_mult_dim: "dim_row (N * N\<^sup>T) = \<v>" "dim_col (N * N\<^sup>T) = \<v>"
   by (simp_all add: points_list_length)
   
-lemma inc_matrix_points: "(\<lambda> x. \<V>s ! x) ` (map_to_points inc_mat \<V>s \<B>s) = \<V>"
-  apply (simp add: map_to_points_def)
+lemma inc_matrix_points: "(\<lambda> x. \<V>s ! x) ` (mat.map_to_points) = \<V>"
+  apply (simp add: mat.map_to_points_def)
   by (metis points_list_length lessThan_atLeast0 points_set_image)
 
 lemma inc_matrix_col_block: 
   assumes "c \<in> set (cols N)"
-  shows "(\<lambda> x. \<V>s ! x) ` (map_col_to_block c) \<in># \<B>"
+  shows "(\<lambda> x. \<V>s ! x) ` (mat.map_col_to_block c) \<in># \<B>"
 proof -
   obtain j where "c = col N j" and "j < \<b>" using assms
     by (metis cols_length cols_nth in_mset_conv_nth ordered_incidence_system.dim_col_b_lt_iff 
@@ -1640,25 +1688,25 @@ proof -
     using matrix_col_in_blocks by blast 
 qed
 
-lemma inc_mat_ordered_blocks_Bs: "map (\<lambda> x. ((!) \<V>s) ` x) (map_to_blocks_ordered inc_mat \<V>s \<B>s) = \<B>s"
+lemma inc_mat_ordered_blocks_Bs: "map (\<lambda> x. ((!) \<V>s) ` x) (mat.map_to_blocks_ordered) = \<B>s"
 proof (auto simp add: list_eq_iff_nth_eq)
   show lengtheq: "length (zero_one_matrix.map_to_blocks_ordered N) = length \<B>s"
-    by (simp add: dim_col_length) 
+    by (simp add: mat.dim_col_length) 
   show "\<And>j i.
        j < length (zero_one_matrix.map_to_blocks_ordered N) \<Longrightarrow> i \<in> zero_one_matrix.map_to_blocks_ordered N ! j \<Longrightarrow> \<V>s ! i \<in> \<B>s ! j"
   proof -
     fix j i
     assume jlt: "j < length (zero_one_matrix.map_to_blocks_ordered N)"
     assume "i \<in> zero_one_matrix.map_to_blocks_ordered N ! j"
-    then have "i \<in> map (\<lambda> c . map_col_to_block c) (cols N) ! j" by (simp add: map_to_blocks_ordered_def)
-    then have "i \<in> map_col_to_block (cols N ! j)"
-      by (metis jlt length_map map_to_blocks_ordered_def nth_map) 
-    then have xain: "i \<in> map_col_to_block (col N j)" using jlt
-      by (metis cols_length cols_nth length_map map_to_blocks_ordered_def) 
-    then have "N $$ (i, j) = 1" using M_def_from_lists
-      by (metis dim_col_length in_map_col_valid_index_M jlt map_blocks_ordered_nth map_points_ordered_nth) 
+    then have "i \<in> map (\<lambda> c . mat.map_col_to_block c) (cols N) ! j" by (simp add: mat.map_to_blocks_ordered_def)
+    then have "i \<in> mat.map_col_to_block (cols N ! j)"
+      by (metis jlt length_map mat.map_to_blocks_ordered_def nth_map) 
+    then have xain: "i \<in> mat.map_col_to_block (col N j)" using jlt
+      by (metis cols_length cols_nth length_map mat.map_to_blocks_ordered_def) 
+    then have "N $$ (i, j) = 1" using mat.M_def_from_lists
+      by (metis mat.dim_col_length mat.in_map_col_valid_index_M jlt mat.map_blocks_ordered_nth mat.map_points_ordered_nth) 
     then show "\<V>s ! i \<in> \<B>s ! j"
-      by (metis lengtheq xain dim_col_length in_map_col_valid_index_M inc_mat_dim_row inc_matrix_point_in_block jlt) 
+      by (metis lengtheq xain mat.dim_col_length mat.in_map_col_valid_index_M inc_mat_dim_row inc_matrix_point_in_block jlt) 
   qed
   show "\<And>i x. i < length (zero_one_matrix.map_to_blocks_ordered N) \<Longrightarrow>
            x \<in> \<B>s ! i \<Longrightarrow> x \<in> (!) \<V>s ` zero_one_matrix.map_to_blocks_ordered N ! i"
@@ -1668,24 +1716,24 @@ proof (auto simp add: list_eq_iff_nth_eq)
     then have jlt: "j < \<b>"
       using blocks_list_length lengtheq by metis
     assume "x \<in> \<B>s ! j"
-    then have xin:  "x \<in> ((!) \<V>s) ` (map_col_to_block (col N j))" using matrix_col_to_block_v2 jlt by simp
-    then have "(!) \<V>s ` (zero_one_matrix.map_to_blocks_ordered N ! j) = (!) \<V>s ` ((map (\<lambda> c . map_col_to_block c) (cols N)) !j)" 
-      by (simp add: map_to_blocks_ordered_def)
-    also have "... = (!) \<V>s ` ( map_col_to_block (cols N ! j))" 
-      by (metis jl length_map map_to_blocks_ordered_def nth_map) 
-    finally have "(!) \<V>s ` (zero_one_matrix.map_to_blocks_ordered N ! j) = (!) \<V>s ` (map_col_to_block (col N j))" using jl
-      by (metis cols_length cols_nth length_map map_to_blocks_ordered_def) 
+    then have xin:  "x \<in> ((!) \<V>s) ` (mat.map_col_to_block (col N j))" using matrix_col_to_block_v2 jlt by simp
+    then have "(!) \<V>s ` (zero_one_matrix.map_to_blocks_ordered N ! j) = (!) \<V>s ` ((map (\<lambda> c . mat.map_col_to_block c) (cols N)) !j)" 
+      by (simp add: mat.map_to_blocks_ordered_def)
+    also have "... = (!) \<V>s ` ( mat.map_col_to_block (cols N ! j))" 
+      by (metis jl length_map mat.map_to_blocks_ordered_def nth_map) 
+    finally have "(!) \<V>s ` (zero_one_matrix.map_to_blocks_ordered N ! j) = (!) \<V>s ` (mat.map_col_to_block (col N j))" using jl
+      by (metis cols_length cols_nth length_map mat.map_to_blocks_ordered_def) 
     then show "x \<in> (!) \<V>s ` zero_one_matrix.map_to_blocks_ordered N ! j"
       by (simp add: xin) 
   qed
 qed
 
-lemma inc_matrix_blocks: "image_mset (\<lambda> bl. ((!) \<V>s) ` bl) (map_to_blocks inc_mat \<V>s \<B>s) = \<B>"
+lemma inc_matrix_blocks: "image_mset (\<lambda> bl. ((!) \<V>s) ` bl) (mat.map_to_blocks) = \<B>"
 proof -
-  have "image_mset (\<lambda> bl. ((!) \<V>s) ` bl) (map_to_blocks inc_mat \<V>s \<B>s) = mset (map (\<lambda> x. ((!) \<V>s) ` x) (map_to_blocks_ordered inc_mat \<V>s \<B>s)) "
-    by (simp add: map_to_blocks_ordered_set)
+  have "image_mset (\<lambda> bl. ((!) \<V>s) ` bl) (mat.map_to_blocks) = mset (map (\<lambda> x. ((!) \<V>s) ` x) (mat.map_to_blocks_ordered)) "
+    by (simp add: mat.map_to_blocks_ordered_set)
   also have "... = mset (\<B>s)"using inc_mat_ordered_blocks_Bs by simp
-  finally have "image_mset (\<lambda> bl. ((!) \<V>s) ` bl) (map_to_blocks inc_mat \<V>s \<B>s) = \<B>"
+  finally have "image_mset (\<lambda> bl. ((!) \<V>s) ` bl) (mat.map_to_blocks) = \<B>"
     by (simp)
   thus ?thesis by simp
 qed
@@ -1767,7 +1815,7 @@ end
 
 (* Lemma exists incidence matrix *)
 
-definition is_incidence_matrix :: "real mat \<Rightarrow> 'a set \<Rightarrow> 'a set multiset \<Rightarrow> bool" where
+definition is_incidence_matrix :: "int mat \<Rightarrow> 'a set \<Rightarrow> 'a set multiset \<Rightarrow> bool" where
 "is_incidence_matrix \<N> V B \<longleftrightarrow> (\<exists> Vs Bs . (Vs \<in> permutations_of_set V \<and> Bs \<in> permutations_of_multiset B \<and> \<N> = (inc_mat_of Vs Bs)))"
 
 lemma (in incidence_system) is_incidence_mat_alt: "is_incidence_matrix \<N> \<V> \<B> \<longleftrightarrow>  (\<exists> Vs Bs . (ordered_incidence_system Vs Bs \<and> \<N> = (inc_mat_of Vs Bs)))"
@@ -1989,22 +2037,22 @@ begin
 lemma rpbd_incidence_matrix_cond: "N * (N\<^sup>T) = \<Lambda> \<cdot>\<^sub>m (J\<^sub>m \<v>) + (\<r> - \<Lambda>) \<cdot>\<^sub>m (1\<^sub>m \<v>)"
 proof (intro eq_matI)
   fix i j
-  assume ilt: "i < dim_row (real \<Lambda> \<cdot>\<^sub>m J\<^sub>m \<v> + real (\<r> - \<Lambda>) \<cdot>\<^sub>m 1\<^sub>m \<v>)" 
-    and jlt: "j < dim_col (real \<Lambda> \<cdot>\<^sub>m J\<^sub>m \<v> + real (\<r> - \<Lambda>) \<cdot>\<^sub>m 1\<^sub>m \<v>)"
-  then have "(real \<Lambda> \<cdot>\<^sub>m J\<^sub>m \<v> + real (\<r> - \<Lambda>) \<cdot>\<^sub>m 1\<^sub>m \<v>) $$ (i, j) = 
-    (real \<Lambda> \<cdot>\<^sub>m J\<^sub>m \<v>) $$(i, j) + (real (\<r> - \<Lambda>) \<cdot>\<^sub>m 1\<^sub>m \<v>) $$ (i, j)" 
+  assume ilt: "i < dim_row (int \<Lambda> \<cdot>\<^sub>m J\<^sub>m \<v> + int (\<r> - \<Lambda>) \<cdot>\<^sub>m 1\<^sub>m \<v>)" 
+    and jlt: "j < dim_col (int \<Lambda> \<cdot>\<^sub>m J\<^sub>m \<v> + int (\<r> - \<Lambda>) \<cdot>\<^sub>m 1\<^sub>m \<v>)"
+  then have "(int \<Lambda> \<cdot>\<^sub>m J\<^sub>m \<v> + int (\<r> - \<Lambda>) \<cdot>\<^sub>m 1\<^sub>m \<v>) $$ (i, j) = 
+    (int \<Lambda> \<cdot>\<^sub>m J\<^sub>m \<v>) $$(i, j) + (int (\<r> - \<Lambda>) \<cdot>\<^sub>m 1\<^sub>m \<v>) $$ (i, j)" 
     by simp
-  then have split: "(real \<Lambda> \<cdot>\<^sub>m J\<^sub>m \<v> + real (\<r> - \<Lambda>) \<cdot>\<^sub>m 1\<^sub>m \<v>) $$ (i, j) = 
-    (real \<Lambda> \<cdot>\<^sub>m J\<^sub>m \<v>) $$(i, j) + (\<r> - \<Lambda>) * ((1\<^sub>m \<v>) $$ (i, j))"
+  then have split: "(int \<Lambda> \<cdot>\<^sub>m J\<^sub>m \<v> + int (\<r> - \<Lambda>) \<cdot>\<^sub>m 1\<^sub>m \<v>) $$ (i, j) = 
+    (int \<Lambda> \<cdot>\<^sub>m J\<^sub>m \<v>) $$(i, j) + (\<r> - \<Lambda>) * ((1\<^sub>m \<v>) $$ (i, j))"
     using ilt jlt by simp
-  have lhs: "(real \<Lambda> \<cdot>\<^sub>m J\<^sub>m \<v>) $$(i, j) = \<Lambda>" using ilt jlt by simp
-  show "(N * N\<^sup>T) $$ (i, j) = (real \<Lambda> \<cdot>\<^sub>m J\<^sub>m \<v> + real (\<r> - \<Lambda>) \<cdot>\<^sub>m 1\<^sub>m \<v>) $$ (i, j)"
+  have lhs: "(int \<Lambda> \<cdot>\<^sub>m J\<^sub>m \<v>) $$(i, j) = \<Lambda>" using ilt jlt by simp
+  show "(N * N\<^sup>T) $$ (i, j) = (int \<Lambda> \<cdot>\<^sub>m J\<^sub>m \<v> + int (\<r> - \<Lambda>) \<cdot>\<^sub>m 1\<^sub>m \<v>) $$ (i, j)"
   proof (cases "i = j")
     case True
-    then have rhs: "(real (\<r> - \<Lambda>) \<cdot>\<^sub>m 1\<^sub>m \<v>) $$ (i, j) = (\<r> - \<Lambda>)" using ilt by fastforce 
-    have "(real \<Lambda> \<cdot>\<^sub>m J\<^sub>m \<v> + real (\<r> - \<Lambda>) \<cdot>\<^sub>m 1\<^sub>m \<v>) $$ (i, j) = \<Lambda> + (\<r> - \<Lambda>)"
+    then have rhs: "(int (\<r> - \<Lambda>) \<cdot>\<^sub>m 1\<^sub>m \<v>) $$ (i, j) = (\<r> - \<Lambda>)" using ilt by fastforce 
+    have "(int \<Lambda> \<cdot>\<^sub>m J\<^sub>m \<v> + int (\<r> - \<Lambda>) \<cdot>\<^sub>m 1\<^sub>m \<v>) $$ (i, j) = \<Lambda> + (\<r> - \<Lambda>)"
       using True jlt by auto
-    then have "(real \<Lambda> \<cdot>\<^sub>m J\<^sub>m \<v> + real (\<r> - \<Lambda>) \<cdot>\<^sub>m 1\<^sub>m \<v>) $$ (i, j) = \<r>" 
+    then have "(int \<Lambda> \<cdot>\<^sub>m J\<^sub>m \<v> + int (\<r> - \<Lambda>) \<cdot>\<^sub>m 1\<^sub>m \<v>) $$ (i, j) = \<r>" 
       using reg_index_lt_rep by (simp add: nat_diff_split)
     then show ?thesis using lhs split rhs True transpose_N_mult_diag ilt jlt by simp
   next
@@ -2015,10 +2063,10 @@ proof (intro eq_matI)
     then show ?thesis using lhs transpose_N_mult_off_diag ilt jlt False by simp
   qed
 next
-  show "dim_row (N * N\<^sup>T) = dim_row (real \<Lambda> \<cdot>\<^sub>m J\<^sub>m \<v> + real (\<r> - \<Lambda>) \<cdot>\<^sub>m 1\<^sub>m \<v>)"
+  show "dim_row (N * N\<^sup>T) = dim_row (int \<Lambda> \<cdot>\<^sub>m J\<^sub>m \<v> + int (\<r> - \<Lambda>) \<cdot>\<^sub>m 1\<^sub>m \<v>)"
     using transpose_N_mult_dim(1) by auto
 next
-  show "dim_col (N * N\<^sup>T) = dim_col (real \<Lambda> \<cdot>\<^sub>m J\<^sub>m \<v> + real (\<r> - \<Lambda>) \<cdot>\<^sub>m 1\<^sub>m \<v>)"
+  show "dim_col (N * N\<^sup>T) = dim_col (int \<Lambda> \<cdot>\<^sub>m J\<^sub>m \<v> + int (\<r> - \<Lambda>) \<cdot>\<^sub>m 1\<^sub>m \<v>)"
     using transpose_N_mult_dim(1) by auto
 qed
 end
@@ -2041,9 +2089,10 @@ locale ordered_const_intersect_design = ordered_proper_design \<V>s \<B>s + cons
 context zero_one_matrix
 begin
 
-sublocale ordered_incidence_sys: ordered_incidence_system map_to_points_ordered map_to_blocks_ordered
-  by (unfold_locales) (simp_all add: map_to_blocks_ordered_set map_to_points_ordered_set 
-      mat_to_blocks_wf map_to_points_ordered_distinct) 
+lemma mat_is_ordered_incidence_sys: "ordered_incidence_system map_to_points_ordered map_to_blocks_ordered"
+  apply (unfold_locales)
+  by (simp_all add: map_to_blocks_ordered_set map_to_points_ordered_set 
+      mat_to_blocks_wf map_to_points_ordered_distinct)
 
 lemma transpose_cond_index_vals: 
   assumes "M * (M\<^sup>T) = \<Lambda> \<cdot>\<^sub>m (J\<^sub>m (dim_row M)) + (r - \<Lambda>) \<cdot>\<^sub>m (1\<^sub>m (dim_row M))"
@@ -2111,9 +2160,11 @@ lemma trans_cond_implies_map_rep_num:
   assumes "x \<in> map_to_points"
   shows "map_to_blocks rep x = r"
 proof -
+  interpret ois: ordered_incidence_system map_to_points_ordered map_to_blocks_ordered 
+    using mat_is_ordered_incidence_sys by simp
   obtain i where "x = (map_to_points_ordered ! i)" and "i < dim_row M"
-    using assms(2) ordered_incidence_sys.valid_points_index_cons local.map_to_points_card map_to_points_ordered_set by auto 
-  then have eq: "map_to_blocks rep x = sum_vec (row M i)" using ordered_incidence_sys.point_rep_mat_row_sum
+    using assms(2) ois.valid_points_index_cons local.map_to_points_card map_to_points_ordered_set by auto 
+  then have eq: "map_to_blocks rep x = sum_vec (row M i)" using ois.point_rep_mat_row_sum
     using local.map_to_points_card local.rev_map_points_blocks
     using local.map_to_blocks_ordered_set local.map_to_points_ordered_set by fastforce 
   then have "\<And> j. i = j \<Longrightarrow> (M * (M\<^sup>T)) $$ (i, j) = r" using assms(1) transpose_cond_index_vals
@@ -2128,19 +2179,21 @@ lemma trans_cond_implies_map_index:
   assumes "card ps = 2"
   shows "map_to_blocks index ps = \<Lambda>"
 proof - 
+  interpret ois: ordered_incidence_system map_to_points_ordered map_to_blocks_ordered 
+    using mat_is_ordered_incidence_sys by simp
   obtain x1 x2 where "x1 \<in> map_to_points" and "x2 \<in> map_to_points" and "ps = {x1, x2}"
     using assms(2) assms(3) by (metis card_2_iff insert_subset) 
   then have neqx: "x1 \<noteq> x2" using assms(3)
     by fastforce
   then obtain i1 i2 where "map_to_points_ordered ! i1 = x1" and "map_to_points_ordered ! i2 = x2" and "i1 < dim_row M" and "i2 < dim_row M"
     by (metis \<open>x1 \<in> local.map_to_points\<close> \<open>x2 \<in> local.map_to_points\<close> local.map_to_points_card 
-        local.map_to_points_ordered_set ordered_incidence_sys.valid_points_index_cons)
+        local.map_to_points_ordered_set ois.valid_points_index_cons)
   then have neqi: "i1 \<noteq> i2" using neqx
     by blast 
   have cond: "\<And> j i. j \<noteq> i \<Longrightarrow> i < dim_row (M * (M\<^sup>T)) \<Longrightarrow> j < dim_row (M * (M\<^sup>T)) \<Longrightarrow> (M * (M\<^sup>T)) $$ (i, j) = \<Lambda>"
     using assms(1) by simp
   then have "map_to_blocks index ps = card {j \<in> {0..<dim_col M} . M $$(i1, j) = 1 \<and> M $$ (i2, j) = 1}"
-    using ordered_incidence_sys.incidence_mat_two_index \<open>Vs ! i1 = x1\<close> \<open>Vs ! i2 = x2\<close> \<open>i1 < dim_row M\<close> 
+    using ois.incidence_mat_two_index \<open>Vs ! i1 = x1\<close> \<open>Vs ! i2 = x2\<close> \<open>i1 < dim_row M\<close> 
       \<open>i2 < dim_row M\<close> \<open>ps = {x1, x2}\<close> map_to_blocks_size map_to_points_card rev_map_points_blocks neqi
     using local.map_to_blocks_ordered_set local.map_to_points_ordered_set by fastforce 
   thus ?thesis using cond transpose_cond_non_diag \<open>i1 < dim_row M\<close> \<open>i2 < dim_row M\<close> index_mult_mat(2) 
@@ -2155,18 +2208,20 @@ lemma rpbd_exists:
   assumes "M * (M\<^sup>T) = \<Lambda> \<cdot>\<^sub>m (J\<^sub>m (dim_row M)) + (r - \<Lambda>) \<cdot>\<^sub>m (1\<^sub>m (dim_row M))"
   shows "ordered_regular_pairwise_balance map_to_points_ordered map_to_blocks_ordered \<Lambda> r"
 proof -
+  interpret ois: ordered_incidence_system map_to_points_ordered map_to_blocks_ordered 
+    using mat_is_ordered_incidence_sys by simp
   interpret pdes: ordered_design "map_to_points_ordered" "map_to_blocks_ordered"
     using assms(2) mat_is_design assms(3)
-    by (simp add: local.map_to_blocks_ordered_set local.map_to_points_ordered_set ordered_design_def ordered_incidence_sys.ordered_incidence_system_axioms)  
+    by (simp add: local.map_to_blocks_ordered_set local.map_to_points_ordered_set ordered_design_def ois.ordered_incidence_system_axioms)  
   show ?thesis proof (unfold_locales, simp_all)
     show "Bs \<noteq> []"
-      using assms(2) local.rev_map_points_blocks ordered_incidence_sys.dim_col_is_b by auto 
-    show "2 \<le> ordered_incidence_sys.\<v>" using assms
+      using assms(2) local.rev_map_points_blocks ois.dim_col_is_b by auto 
+    show "2 \<le> ois.\<v>" using assms
       by (simp add: local.map_to_points_card local.map_to_points_ordered_set) 
-    show "\<And>ps. ps \<subseteq> ordered_incidence_sys.\<V> \<Longrightarrow> card ps = 2 \<Longrightarrow> ordered_incidence_sys.\<B> index ps = \<Lambda>"
+    show "\<And>ps. ps \<subseteq> ois.\<V> \<Longrightarrow> card ps = 2 \<Longrightarrow> ois.\<B> index ps = \<Lambda>"
       using assms  trans_cond_implies_map_index
       by (simp add: local.map_to_blocks_ordered_set local.map_to_points_ordered_set) 
-    show "\<And>x. x \<in> ordered_incidence_sys.\<V> \<Longrightarrow> ordered_incidence_sys.\<B> rep x = r" 
+    show "\<And>x. x \<in> ois.\<V> \<Longrightarrow> ois.\<B> rep x = r" 
       using assms trans_cond_implies_map_rep_num by (simp add: local.map_to_blocks_ordered_set local.map_to_points_ordered_set) 
   qed
 qed
@@ -2174,8 +2229,13 @@ qed
 lemma col_ones_sum_eq_block_size: 
   assumes "j < dim_col M"
   shows "card (map_col_to_block (col M j)) = sum_vec (col M j)"
-  using assms zero_one_matrix.map_blocks_ordered_nth ordered_incidence_sys.block_size_mat_rep_sum local.zero_one_matrix_axioms local.map_to_blocks_size local.rev_map_points_blocks
-  by (metis local.dim_col_length ordered_incidence_sys.blocks_list_length)
+proof -
+  interpret ois: ordered_incidence_system map_to_points_ordered map_to_blocks_ordered 
+    using mat_is_ordered_incidence_sys by simp
+  show ?thesis 
+    using assms map_blocks_ordered_nth ois.block_size_mat_rep_sum zero_one_matrix_axioms map_to_blocks_size rev_map_points_blocks
+  by (metis dim_col_length ois.blocks_list_length)
+qed
 
 lemma vec_k_impl_uniform_block_size: 
   assumes "dim_row M \<ge> 2" (* Min two points *)
@@ -2205,20 +2265,21 @@ lemma bibd_exists:
   assumes "k \<ge> 2" "k < dim_row M"
   shows "ordered_bibd map_to_points_ordered map_to_blocks_ordered k \<Lambda>"
 proof -
+  interpret ois: ordered_incidence_system map_to_points_ordered map_to_blocks_ordered 
+    using mat_is_ordered_incidence_sys by simp
   interpret ipbd: ordered_regular_pairwise_balance map_to_points_ordered map_to_blocks_ordered \<Lambda> r
     using rpbd_exists assms by simp
   show ?thesis proof (unfold_locales, simp_all add: assms)
     show "\<And>bl. bl \<in> set Bs \<Longrightarrow> card bl = k"
       using vec_k_impl_uniform_block_size assms
       by (metis local.map_to_blocks_ordered_set set_mset_mset) 
-    show "k < ordered_incidence_sys.\<v>"
+    show "k < ois.\<v>"
       using assms  local.map_to_points_card
       by (simp add: local.map_to_points_ordered_set) 
   qed
 qed
 
 end
-
 
 
 (* Reasoning on isomorphisms *)
