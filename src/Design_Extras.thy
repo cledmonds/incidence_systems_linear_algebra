@@ -23,10 +23,75 @@ lemma inter_eq_blocks_eq_card:
 lemma inter_num_of_eq_blocks: "b1 = b2 \<Longrightarrow> b1 |\<inter>| b2 = card b1"
   by (simp add: intersection_number_def)
 
+lemma intersect_num_same_eq_size[simp]: "bl |\<inter>| bl = card bl"
+  by (simp add: intersection_number_def)
+
 lemma index_lt_rep_general: 
   assumes "x \<in> ps"
   shows " B index ps \<le> B rep x"
   by (simp add: points_index_def point_replication_number_def) (metis assms filter_filter_mset_cond_simp size_filter_mset_lesseq subset_iff)
+
+context incidence_system 
+begin
+lemma block_size_alt:
+  assumes "bl \<in># \<B>"
+  shows "card bl = card {x \<in> \<V> . x \<in> bl}" 
+proof -
+  have "\<And> x. x \<in> bl \<Longrightarrow> x \<in> \<V>" using wellformed assms by auto
+  thus ?thesis
+    by (metis (no_types, lifting) Collect_cong Collect_mem_eq) 
+qed
+
+lemma complement_image: "\<B>\<^sup>C = image_mset block_complement \<B>"
+  by (simp add: complement_blocks_def)
+
+lemma point_in_block_rep_min_iff:
+  assumes "x \<in> \<V>" 
+  shows "\<exists> bl . bl \<in># \<B> \<and> x \<in> bl \<longleftrightarrow> (\<B> rep x > 0)"
+  using rep_number_g0_exists
+  by (metis block_complement_elem_iff block_complement_inv wellformed)
+
+
+(* Design operations *)
+lemma del_block_b: 
+  "bl \<in># \<B> \<Longrightarrow> size (del_block bl) = \<b> - 1"
+  "bl \<notin># \<B> \<Longrightarrow> size (del_block bl) = \<b>"
+  by (simp_all add: del_block_def size_Diff_singleton)
+
+lemma del_block_points_index: 
+  assumes "ps \<subseteq> \<V>"
+  assumes "card ps = 2"
+  assumes "bl \<in># \<B>"
+  shows "ps \<subseteq> bl \<Longrightarrow> points_index (del_block bl) ps = points_index \<B> ps - 1"
+        "\<not> (ps \<subseteq> bl) \<Longrightarrow> points_index (del_block bl) ps = points_index \<B> ps"
+proof -
+  assume "ps \<subseteq> bl"
+  then show "points_index (del_block bl) ps = points_index \<B> ps - 1"
+    using point_index_diff del_block_def
+    by (metis assms(3) insert_DiffM2 points_index_singleton) 
+next
+  assume "\<not> ps \<subseteq> bl"
+  then show "del_block bl index ps = \<B> index ps"
+    using point_index_diff del_block_def
+    by (metis add_block_def add_block_index_not_in assms(3) insert_DiffM2) 
+qed
+
+end
+
+context finite_incidence_system
+begin
+
+lemma complete_block_size_eq_points: "bl \<in># \<B> \<Longrightarrow> card bl = \<v> \<Longrightarrow> bl = \<V>"
+  using wellformed by (simp add:  card_subset_eq finite_sets) 
+
+lemma complete_block_all_subsets: "bl \<in># \<B> \<Longrightarrow> card bl = \<v> \<Longrightarrow> ps \<subseteq> \<V> \<Longrightarrow> ps \<subseteq> bl"
+  using complete_block_size_eq_points by auto
+
+lemma del_block_complete_points_index: "ps \<subseteq> \<V> \<Longrightarrow> card ps = 2 \<Longrightarrow> bl \<in># \<B> \<Longrightarrow> card bl = \<v> \<Longrightarrow> 
+  points_index (del_block bl) ps = points_index \<B> ps - 1"
+  using complete_block_size_eq_points del_block_points_index(1) by blast
+
+end
 
 context design
 begin
@@ -73,21 +138,19 @@ qed
 
 end
 
-
-
-context incidence_system 
+context proper_design
 begin
-lemma block_size_alt:
-  assumes "bl \<in># \<B>"
-  shows "card bl = card {x \<in> \<V> . x \<in> bl}" 
-proof -
-  have "\<And> x. x \<in> bl \<Longrightarrow> x \<in> \<V>" using wellformed assms by auto
-  thus ?thesis
-    by (metis (no_types, lifting) Collect_cong Collect_mem_eq) 
-qed
 
-lemma complement_image: "\<B>\<^sup>C = image_mset block_complement \<B>"
-  by (simp add: complement_blocks_def)
+lemma del_block_proper: 
+  assumes "\<b> > 1"
+  shows "proper_design \<V> (del_block bl)"
+proof -
+  interpret d: design \<V> "(del_block bl)"
+    using delete_block_design by simp
+  have "d.\<b> > 0" using del_block_b assms
+    by (metis b_positive zero_less_diff) 
+  then show ?thesis by(unfold_locales) (auto)
+qed
 
 end
 
@@ -267,6 +330,94 @@ proof (rule ccontr)
     using \<open>\<Lambda> = \<B> rep x\<close> nat_less_le by blast  
 qed
 
+lemma remove_complete_block_pbd: 
+  assumes "\<b> \<ge> 2"
+  assumes "bl \<in># \<B>"
+  assumes "card bl = \<v>"
+  shows "pairwise_balance \<V> (del_block bl) (\<Lambda> - 1)"
+proof -
+  interpret pd: proper_design \<V> "(del_block bl)" using assms(1) del_block_proper by simp
+  show ?thesis using t_lt_order assms del_block_complete_points_index 
+    by (unfold_locales) (simp_all)
+qed
+
+lemma remove_complete_block_pbd_alt: 
+  assumes "\<b> \<ge> 2"
+  assumes "bl \<in># \<B>"
+  assumes "bl = \<V>"
+  shows "pairwise_balance \<V> (del_block bl) (\<Lambda> - 1)"
+  using remove_complete_block_pbd assms by blast 
+
+lemma b_gt_index:"\<b> \<ge> \<Lambda>"
+proof (rule ccontr)
+  assume blt: "\<not> \<b> \<ge> \<Lambda>"
+  obtain ps where "card ps = 2" and "ps \<subseteq> \<V>" using t_lt_order
+    by (meson obtain_t_subset_points) 
+  then have "size {#bl \<in># \<B>. ps \<subseteq> bl#} = \<Lambda>" using balanced by (simp add: points_index_def)
+  thus False using blt by auto 
+qed
+
+lemma remove_complete_blocks_set_pbd:
+  assumes "x < \<Lambda>"
+  assumes "size A = x"
+  assumes "A \<subset># \<B>"
+  assumes "\<And> a. a \<in># A \<Longrightarrow> a = \<V>"
+  shows "pairwise_balance \<V> (\<B> - A) (\<Lambda> - x)"
+using assms proof (induct "x" arbitrary: A)
+  case 0
+  then have beq: "\<B> - A = \<B>" by simp
+  have "pairwise_balance \<V> \<B> \<Lambda>" by (unfold_locales)
+  then show ?case using beq by simp
+next
+  case (Suc x)
+  then have "size A > 0" by simp
+  let ?A' = "A - {#\<V>#}"
+  have ss: "?A' \<subset># \<B>"
+    using Suc.prems(3) by (metis diff_subset_eq_self subset_mset.le_less_trans)
+  have sx: "size ?A' = x"
+    by (metis Suc.prems(2) Suc.prems(4) Suc_inject size_Suc_Diff1 size_eq_Suc_imp_elem)
+  have xlt: "x < \<Lambda>"
+    by (simp add: Suc.prems(1) Suc_lessD) 
+  have av: "\<And> a. a \<in># ?A' \<Longrightarrow> a = \<V>" using Suc.prems(4)
+    by (meson in_remove1_mset_neq)
+  then interpret pbd: pairwise_balance \<V> "(\<B> - ?A')" "(\<Lambda> - x)" using Suc.hyps sx ss xlt by simp
+  have "Suc x < \<b>" using Suc.prems(3)
+    by (metis Suc.prems(2) mset_subset_size) 
+  then have "\<b> - x \<ge> 2"
+    by linarith 
+  then have bgt: "size (\<B> - ?A') \<ge> 2" using ss size_Diff_submset
+    by (metis subset_msetE sx)
+  have ar: "add_mset \<V> (remove1_mset \<V> A) = A" using Suc.prems(2) Suc.prems(4)
+    by (metis insert_DiffM size_eq_Suc_imp_elem) 
+  then have db: "pbd.del_block \<V> = \<B> - A" by(simp add: pbd.del_block_def)
+  then have "\<B> - ?A' = \<B> - A + {#\<V>#}" using Suc.prems(2) Suc.prems(4)
+    by (metis (no_types, lifting) Suc.prems(3) ar add_diff_cancel_left' add_mset_add_single add_right_cancel 
+        pbd.del_block_def remove_1_mset_id_iff_notin ss subset_mset.lessE trivial_add_mset_remove_iff) 
+  then have "\<V> \<in># (\<B> - ?A')" by simp 
+  then have "pairwise_balance \<V> (\<B> - A) (\<Lambda> - (Suc x))" using db bgt diff_Suc_eq_diff_pred 
+      diff_commute pbd.remove_complete_block_pbd_alt by presburger
+  then show ?case by simp
+qed
+
+lemma remove_all_complete_blocks_pbd:
+  assumes "count \<B> \<V> < \<Lambda>"
+  shows "pairwise_balance \<V> (removeAll_mset \<V> \<B>) (\<Lambda> - (count \<B> \<V>))" (is "pairwise_balance \<V> ?B ?\<Lambda>")
+proof -
+  let ?A = "replicate_mset (count \<B> \<V>) \<V>"
+  let ?x = "size ?A"
+  have blt: "count \<B> \<V> \<noteq> \<b>" using b_gt_index assms
+    by linarith 
+  have xeq: "?x = count \<B> \<V>" by simp
+  have av: "\<And> a. a \<in># ?A \<Longrightarrow> a = \<V>"
+    by (metis in_replicate_mset)
+  have "?A \<subseteq># \<B>"
+    by (meson count_le_replicate_mset_subset_eq le_eq_less_or_eq)
+  then have "?A \<subset># \<B>" using blt
+    by (metis subset_mset.nless_le xeq) 
+  thus ?thesis using assms av xeq remove_complete_blocks_set_pbd
+    by presburger 
+qed
+
 end
 
 context bibd
@@ -444,6 +595,21 @@ proof -
   finally show ?thesis by simp
 qed
 
+lemma points_inter_num_rep: 
+  assumes "b1 \<in># \<B>" and "b2 \<in># \<B> - {#b1#}"
+  shows "card {v \<in> \<V> . v \<in> b1 \<and> v \<in> b2} = \<m>"
+proof -
+  have "\<And> x. x \<in> b1 \<inter> b2 \<Longrightarrow> x \<in> \<V>" using wellformed assms by auto
+  then have "{v \<in> \<V> . v \<in> (b1 \<inter> b2)} = (b1 \<inter> b2)"
+    by blast 
+  then have "card {v \<in> \<V> . v \<in> b1 \<and> v \<in> b2} = card (b1 \<inter> b2)"
+    by simp 
+  thus ?thesis using assms const_intersect intersection_number_def
+    by metis 
+qed
+
 end
+
+locale simple_const_intersect_design = const_intersect_design + simple_design
 
 end

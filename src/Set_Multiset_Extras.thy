@@ -80,6 +80,9 @@ lemma count_mset_split_image_filter_not:
   shows "count (image_mset (\<lambda>x. if P x then f x else b) A ) b = size (filter_mset (\<lambda> x. \<not> P x) A)"
   using image_mset_If by (smt (verit) assms count_size_set_repr filter_mset_cong image_mset_filter_swap size_image_mset) 
 
+lemma removeAll_size_lt: "size (removeAll_mset C M) \<le> size M"
+  by (simp add: size_mset_mono)
+
 (* Permutations of Sets Extras *)
 
 lemma elem_permutation_of_set_empty_iff: "finite A \<Longrightarrow> xs \<in> permutations_of_set A \<Longrightarrow> 
@@ -205,5 +208,76 @@ lemma count_min_2_indices:
   apply (cases "i1 < i2")
    apply (simp add: assms count_min_2_indices_lt)
   by (metis assms(1) assms(2) assms(3) assms(4) assms(5) count_min_2_indices_lt linorder_cases) 
+
+lemma obtain_set_list_item: 
+  assumes "x \<in> set xs"
+  obtains i where "i < length xs" and "xs ! i = x"
+  by (meson assms in_set_conv_nth)
+
+
+(* Summation Rules *)
+
+context comm_monoid_add
+begin
+
+lemma sum_reorder_triple: "(\<Sum> l \<in> A . (\<Sum> i \<in> B . (\<Sum> j \<in> C . g l i j))) = (\<Sum> i \<in> B . (\<Sum> j \<in> C . (\<Sum> l \<in> A . g l i j)))"
+proof -
+  have "(\<Sum> l \<in> A . (\<Sum> i \<in> B . (\<Sum> j \<in> C . g l i j))) = (\<Sum>i \<in> B . (\<Sum> l \<in> A  . (\<Sum> j \<in> C . g l i j)))"
+    using sum.swap[of "(\<lambda> l i . (\<Sum> j \<in> C . g l i j))"  "B" "A"] by simp
+  also have "...  = (\<Sum>i \<in> B . (\<Sum> j \<in> C . (\<Sum>l \<in> A . g l i j)))" using sum.swap by metis
+  finally show ?thesis by simp
+qed
+
+lemma double_sum_mult_hom: "(\<Sum> i \<in> A . (\<Sum> j \<in> g i . (k ::('b :: {comm_ring_1})) * (f i j))) = k* (\<Sum> i \<in> A . (\<Sum> j \<in> g i . f i j))"
+  by (metis (mono_tags, lifting) comm_monoid_add_class.sum.cong sum_distrib_left)
+
+lemma double_sum_split_case: 
+  assumes "finite A"
+  shows "(\<Sum> i \<in> A . (\<Sum> j \<in> A . f i j)) = (\<Sum> i \<in> A . (f i i)) + (\<Sum> i \<in> A . (\<Sum> j \<in> (A - {i}) . f i j))" 
+proof -
+  have "\<And> i. i \<in> A \<Longrightarrow> (\<Sum> j \<in> A . f i j) = f i i + (\<Sum> j \<in> (A - {i}) . f i j)" using sum.remove assms
+    by metis 
+  then have "(\<Sum> i \<in> A . (\<Sum> j \<in> A . f i j)) = (\<Sum> i \<in> A . f i i + (\<Sum> j \<in> (A - {i}) . f i j))" by simp
+  then show ?thesis
+    by (simp add: sum.distrib) 
+qed
+               
+lemma double_sum_split_case2: "(\<Sum> i \<in> A . (\<Sum> j \<in> A . g i j)) = (\<Sum> i \<in> A . (g i i)) + (\<Sum> i \<in> A . (\<Sum> j \<in> {a \<in> A . a \<noteq> i} . g i j)) " 
+proof - 
+  have "\<And> i. A = {a \<in> A . a = i} \<union> {a \<in> A . a \<noteq> i}" by auto
+  then have part: "\<And> i. i \<in> A \<Longrightarrow> A = {i} \<union> {a \<in> A . a \<noteq> i}" by auto
+  have empt:"\<And> i. {i} \<inter> {a \<in> A . a \<noteq> i} = {}"
+    by simp 
+  then have "(\<Sum> i \<in> A . (\<Sum> j \<in> A . g i j)) = (\<Sum> i \<in> A . ((\<Sum> j \<in> {i} . g i j) + (\<Sum> j \<in> {a \<in> A . a \<noteq> i} . g i j)))" using part
+    by (smt (verit) finite_Un local.sum.cong local.sum.infinite local.sum.union_disjoint) 
+  also have "... = (\<Sum> i \<in> A . ((\<Sum> j \<in> {i} . g i j))) + (\<Sum> i \<in> A . (\<Sum> j \<in> {a \<in> A . a \<noteq> i} . g i j))"
+    by (simp add: local.sum.distrib) 
+  finally show ?thesis by simp
+qed
+
+end
+
+context comm_ring_1
+begin
+
+lemma double_sum_split_case_square: 
+  assumes "finite A"
+  shows "(\<Sum> i \<in> A . f i )^2 = (\<Sum> i \<in> A . (f i * f i)) + (\<Sum> i \<in> A . (\<Sum> j \<in> (A - {i}) . f i * f j))" 
+proof -
+  have "(\<Sum> i \<in> A . f i )^2 = (\<Sum> i \<in> A . f i) * (\<Sum> i \<in> A . f i)"
+    using power2_eq_square by blast
+  then have "(\<Sum> i \<in> A . f i) * (\<Sum> i \<in> A . f i) = (\<Sum> i \<in> A . f i) * (\<Sum> j \<in> A . f j)" by simp
+  also have "... = (\<Sum> i \<in> A . f i * (\<Sum> j \<in> A . f j))" using sum_distrib_right by simp
+  also have "... = (\<Sum> i \<in> A .  (\<Sum> j \<in> A . f i * f j))" using sum_distrib_left by metis 
+  finally have "(\<Sum> i \<in> A . f i) * (\<Sum> i \<in> A . f i) = (\<Sum> i \<in> A . (f i * f i)) + (\<Sum> i \<in> A . (\<Sum> j \<in> (A - {i}) . f i * f j))" 
+    using assms double_sum_split_case[of "A" "\<lambda> i j . f i * f j"]
+    using \<open>(\<Sum>i\<in>A. f i * sum f A) = (\<Sum>i\<in>A. \<Sum>j\<in>A. f i * f j)\<close> \<open>sum f A * sum f A = (\<Sum>i\<in>A. f i * sum f A)\<close> by presburger 
+  then show ?thesis
+    using power2_eq_square by presburger 
+qed
+
+end
+
+
 
 end

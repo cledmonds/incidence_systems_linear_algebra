@@ -3,7 +3,7 @@
 *)
 
 theory Matrix_Vector_Extras imports Set_Multiset_Extras Jordan_Normal_Form.Matrix 
-Design_Theory.Multisets_Extras "Groebner_Bases.Macaulay_Matrix"
+Design_Theory.Multisets_Extras "Groebner_Bases.Macaulay_Matrix" "Polynomial_Factorization.Missing_List"
 begin
 
 
@@ -107,6 +107,16 @@ lemma vec_mset_set: "vec_set v = set_mset (vec_mset v)"
   by (simp add: mset_vec_eq_mset_list set_list_of_vec)
 
 
+lemma vCons_set_contains_in: "a \<in> set\<^sub>v v \<Longrightarrow> set\<^sub>v (vCons a v) = set\<^sub>v v"
+  by (metis remdups_mset_singleton_sum set_mset_remdups_mset vec_mset_set vec_mset_vCons)
+
+lemma vCons_set_contains_add: "a \<notin> set\<^sub>v v \<Longrightarrow> set\<^sub>v (vCons a v) = set\<^sub>v v \<union> {a}"
+  using vec_mset_set vec_mset_vCons
+  by (metis Un_insert_right set_mset_add_mset_insert sup_bot_right) 
+
+lemma setv_vec_mset_not_in_iff: "a \<notin> set\<^sub>v v \<longleftrightarrow> a \<notin># vec_mset v"
+  by (simp add: vec_mset_set)
+
 (* Count Vec *)
 
 abbreviation "count_vec v a \<equiv> count (vec_mset v) a"
@@ -203,6 +213,71 @@ proof -
   thus ?thesis by (simp add: count_vec_sum_ones)
 qed
 
+lemma setv_not_in_count0_iff: "a \<notin> set\<^sub>v v \<longleftrightarrow> count_vec v a = 0"
+  using setv_vec_mset_not_in_iff
+  by (metis count_eq_zero_iff) 
+
+lemma sum_count_vec: 
+  assumes "finite (set\<^sub>v v)"
+  shows "(\<Sum> i \<in> set\<^sub>v v. count_vec v i) = dim_vec v"
+using assms proof (induct "v")
+  case vNil
+  then show ?case
+    by (simp add: count_vec_empty) 
+next
+  case (vCons a v)
+  then show ?case proof (cases "a \<in> set\<^sub>v v")
+    case True
+    have cv: "\<And> x. x \<in>(set\<^sub>v v) - {a} \<Longrightarrow> count_vec (vCons a v) x = count_vec v x" using count_vec_vCons
+      by (metis DiffD2 singletonI)
+    then have "sum (count_vec (vCons a v)) (set\<^sub>v (vCons a v)) =  sum (count_vec (vCons a v)) (set\<^sub>v v)" using vCons_set_contains_in
+      True by metis
+    also have "... = count_vec (vCons a v) a + sum (count_vec (vCons a v)) ((set\<^sub>v v) - {a})" using sum.remove True vCons.prems(1)
+      by (metis vCons_set_contains_in) 
+    also have "... = count_vec v a + 1 + sum (count_vec v) ((set\<^sub>v v) - {a})" using cv count_vec_vCons
+      by (metis sum.cong) 
+    also have "... = 1 + sum (count_vec v) ((set\<^sub>v v))"
+      by (metis (no_types, opaque_lifting) True ab_semigroup_add_class.add_ac(1) add.commute sum.remove vCons.prems vCons_set_contains_in)
+    also have "... = 1 + dim_vec v" using vCons.hyps
+      by (metis True vCons.prems vCons_set_contains_in) 
+    finally show ?thesis by simp
+  next
+    case False
+    then have cv: "\<And> x. x \<in>(set\<^sub>v v) \<Longrightarrow> count_vec (vCons a v) x = count_vec v x" using count_vec_vCons
+      by (metis) 
+    have f: "finite (set\<^sub>v v)" using vCons.prems False vCons_set_contains_add
+      by (metis Un_infinite) 
+    have "sum (count_vec (vCons a v)) (set\<^sub>v (vCons a v)) = count_vec (vCons a v) a + sum (count_vec (vCons a v)) (set\<^sub>v v)" 
+      using False by (metis Un_insert_right finite_Un sum.insert sup_bot_right vCons.prems vCons_set_contains_add) 
+    also have "... = count_vec v a + 1 + sum (count_vec v) ((set\<^sub>v v) )" using cv count_vec_vCons 
+      by (metis sum.cong) 
+    also have "... = 1 + sum (count_vec v) ((set\<^sub>v v))" using False setv_not_in_count0_iff
+      by (metis add_0) 
+    also have "... = 1 + dim_vec v" using vCons.hyps f by simp
+    finally show ?thesis by simp
+  qed
+qed
+
+lemma sum_setv_subset_eq: 
+  assumes "finite A"
+  assumes "set\<^sub>v v \<subseteq> A"
+  shows "(\<Sum> i \<in> set\<^sub>v v. count_vec v i) = (\<Sum> i \<in> A. count_vec v i)"
+proof -
+  have ni: "\<And> x. x \<notin> set\<^sub>v v \<Longrightarrow> count_vec v x = 0"
+    by (simp add: setv_not_in_count0_iff) 
+  have "(\<Sum> i \<in> A. count_vec v i) = (\<Sum> i \<in> A - (set\<^sub>v v). count_vec v i) + (\<Sum> i \<in> (set\<^sub>v v). count_vec v i)" 
+    using sum.subset_diff assms by auto
+  then show ?thesis using ni
+    by simp 
+qed
+
+lemma sum_count_vec_subset: 
+  assumes "finite A"
+  assumes "set\<^sub>v v \<subseteq> A"
+  shows "(\<Sum> i \<in> A. count_vec v i) = dim_vec v"
+  using sum_setv_subset_eq sum_count_vec finite_subset assms
+  by metis 
+
 (* Vec contains *)
 
 abbreviation vec_contains :: "'a \<Rightarrow> 'a vec \<Rightarrow> bool" (infix "\<in>$" 50)where 
@@ -267,6 +342,30 @@ lemma dim_vec_mult_vec_mat [simp]: "dim_vec (v \<^sub>v* A) = dim_col A"
 lemma all_ones_vec_smult[simp]: "i < n \<Longrightarrow> ((k :: ('a :: {one, zero, monoid_mult})) \<cdot>\<^sub>v (u\<^sub>v n)) $ i = k"
   by (simp add: smult_vec_def)
 
+(* Vector Operations *)
+
+lemma smult_scalar_prod_sum: 
+  fixes x :: "'a :: {comm_ring_1}" 
+  assumes "vx \<in> carrier_vec n"
+  assumes "vy \<in> carrier_vec n"
+  shows "(\<Sum> i \<in> {0..<n} .((x \<cdot>\<^sub>v vx) $ i) * ((y \<cdot>\<^sub>v vy) $ i)) = x * y * (vx \<bullet> vy)"
+proof -
+  have "\<And> i . i < n \<Longrightarrow> ((x \<cdot>\<^sub>v vx) $ i) * ((y \<cdot>\<^sub>v vy) $ i) = x * y * (vx $ i) * (vy $ i)" using assms  by simp
+  then have "(\<Sum> i \<in> {0..<n} .((x \<cdot>\<^sub>v vx) $ i) * ((y \<cdot>\<^sub>v vy) $ i)) = (\<Sum> i \<in> {0..<n} .x * y * (vx $ i) * (vy $ i))" by simp
+  also have "... = x * y * (\<Sum> i \<in> {0..<n} . (vx $ i) * (vy $ i))"
+    using sum_distrib_left[of "x * y" "(\<lambda> i. (vx $ i) * (vy $ i))" "{0..<n}"]
+    by (metis (no_types, lifting) mult.assoc sum.cong) 
+  finally have "(\<Sum> i \<in> {0..<n} .((x \<cdot>\<^sub>v vx) $ i) * ((y \<cdot>\<^sub>v vy) $ i)) = x * y * (vx \<bullet> vy)" using scalar_prod_def assms
+    by (metis carrier_vecD) 
+  thus ?thesis by simp
+qed
+
+lemma vec_prod_zero: "(0\<^sub>v n) \<bullet> (0\<^sub>v n) = 0"
+  by simp
+
+lemma map_vec_compose: "map_vec f (map_vec g v) = map_vec (f \<circ> g) v"
+  by auto
+
 section \<open>Matrix Extras\<close>
 
 (* All ones Matrix *)
@@ -305,5 +404,97 @@ lemma row_elems_subset_mat: "i < dim_row N \<Longrightarrow> vec_set (row N i) \
 
 lemma col_elems_subset_mat: "i < dim_col N \<Longrightarrow> vec_set (col N i) \<subseteq> elements_mat N"
   by (auto simp add: vec_set_def elements_matI)
+
+(* Map Mat *)
+
+lemma row_map_mat[simp]:
+  assumes "i < dim_row A" shows "row (map_mat f A) i = map_vec f (row A i)"
+  unfolding map_mat_def map_vec_def using assms by auto
+
+lemma map_vec_mat_rows: "map (map_vec f) (rows M) = rows ((map_mat f) M)"
+  by (simp add: map_nth_eq_conv) 
+
+lemma map_vec_mat_cols: "map (map_vec f) (cols M) = cols ((map_mat f) M)"
+  by (simp add: map_nth_eq_conv)
+
+lemma map_mat_compose: "map_mat f (map_mat g A) = map_mat (f \<circ> g) A"
+  by (auto)
+
+lemma map_mat_elements: "elements_mat (map_mat f A) = f ` (elements_mat A)"
+proof (auto)
+  fix x assume "x \<in> elements_mat (map_mat f A)"
+  then obtain i j where "i < dim_row (map_mat f A)" and "j < dim_col (map_mat f A)" and "(map_mat f A) $$ (i, j) = x"
+    by auto
+  then show "x \<in> f ` elements_mat A" by auto
+next
+  fix xa assume "xa \<in> elements_mat A" 
+  then obtain i j where "i < dim_row A" and "j < dim_col A" and "A $$ (i, j) = xa" by auto
+  then show "f xa \<in> elements_mat (map_mat f A)" by auto
+qed
+
+section \<open> Vector and Matrix Homomorphism \<close>
+
+(* Vector Homomorphism *)
+
+context semiring_hom
+begin
+
+lemma  vec_hom_smult: 
+  assumes "dim_vec v2 \<le> dim_vec v1"
+  shows "hom (v1 \<bullet> v2) = vec\<^sub>h v1 \<bullet> vec\<^sub>h v2"
+  unfolding scalar_prod_def using index_map_vec assms by (auto simp add: hom_distribs)
+
+end
+
+lemma map_vec_vCons: "vCons (f a) (map_vec f v) = map_vec f (vCons a v)"
+  by (intro eq_vecI, simp_all add: vec_index_vCons)
+
+context inj_zero_hom
+begin
+
+lemma  vec_hom_zero_iff[simp]: "(map_vec hom x = 0\<^sub>v n) = (x = 0\<^sub>v n)"
+proof -
+  {
+    fix i
+    assume i: "i < n" "dim_vec x = n"
+    hence "map_vec hom x $ i = 0 \<longleftrightarrow> x $ i = 0"
+      using index_map_vec(1)[of i x] by simp
+  } note main = this
+  show ?thesis unfolding vec_eq_iff by (simp, insert main, auto)
+qed
+
+lemma  mat_hom_inj: "map_mat hom A = map_mat hom B \<Longrightarrow> A = B"
+  unfolding mat_eq_iff by auto
+
+lemma  vec_hom_inj: "map_vec hom v = map_vec hom w \<Longrightarrow> v = w"
+  unfolding vec_eq_iff by auto
+
+lemma  vec_hom_set_distinct_iff: 
+  fixes xs :: "'a vec list"
+  shows "distinct xs \<longleftrightarrow> distinct (map (map_vec hom) xs)"
+  using vec_hom_inj by (induct xs) (auto)
+
+lemma vec_hom_mset: "image_mset hom (vec_mset v) = vec_mset (map_vec hom v)"
+  apply (induction v)
+   apply (metis mset.simps(1) vec_mset_img_map vec_mset_vNil vec_of_list_Nil)
+  by (metis mset_vec_eq_mset_list vec_list vec_mset_img_map)
+
+lemma vec_hom_set: "hom ` set\<^sub>v v = set\<^sub>v (map_vec hom v)"
+proof (induct v)
+  case vNil
+  then show ?case by (metis image_mset_empty set_image_mset vec_hom_zero_iff vec_mset_set vec_mset_vNil zero_vec_zero)
+next
+  case (vCons a v)
+  have "hom ` set\<^sub>v (vCons a v) = hom ` ({a} \<union> set\<^sub>v v)"
+    by (metis Un_commute insert_absorb insert_is_Un vCons_set_contains_add vCons_set_contains_in) 
+  also have "... = {hom a} \<union> (hom ` (set\<^sub>v v))" by simp
+  also have "... = {hom a} \<union> (set\<^sub>v (map_vec hom v))" using vCons.hyps by simp
+  also have "... = set\<^sub>v (vCons (hom a) (map_vec hom v))"
+    by (metis Un_commute insert_absorb insert_is_Un vCons_set_contains_add vCons_set_contains_in) 
+  finally show ?case using map_vec_vCons
+    by metis 
+qed
+
+end
 
 end

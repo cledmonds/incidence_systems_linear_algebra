@@ -7,42 +7,6 @@ definition dual_blocks :: "'a set \<Rightarrow> 'a set list \<Rightarrow> nat se
 lemma dual_blocks_wf: "b \<in># dual_blocks V Bs \<Longrightarrow> b \<subseteq> {0..<length Bs}"
   by (auto simp add: dual_blocks_def)
 
-lemma inc_sys_ordered_permI: 
-  assumes "incidence_system V B" and "Vs \<in> permutations_of_set V" and "Bs \<in> permutations_of_multiset B" 
-  shows "ordered_incidence_system Vs Bs"
-proof -
-  have bset: "mset Bs = B" using assms(3) permutations_of_multisetD by auto
-  have vset: "set Vs = V" using assms(2) permutations_of_setD(1) by auto
-  interpret inc: incidence_system V B using assms by simp
-  show ?thesis proof (unfold_locales)
-    show "\<And>b. b \<in># mset Bs \<Longrightarrow> b \<subseteq> set Vs" using inc.wellformed vset bset by simp
-    show "distinct Vs" using assms(2)permutations_of_setD(2) by auto 
-  qed
-qed
-
-lemma inc_sys_orderedI: 
-  assumes "incidence_system V B" and "distinct Vs" and "set Vs = V" and "mset Bs = B" 
-  shows "ordered_incidence_system Vs Bs"
-proof -
-  interpret inc: incidence_system V B using assms by simp
-  show ?thesis proof (unfold_locales)
-    show "\<And>b. b \<in># mset Bs \<Longrightarrow> b \<subseteq> set Vs" using inc.wellformed assms by simp
-    show "distinct Vs" using assms(2)permutations_of_setD(2) by auto 
-  qed
-qed
-
-context incidence_system
-begin
-
-lemma point_in_block_rep_min_iff:
-  assumes "x \<in> \<V>" 
-  shows "\<exists> bl . bl \<in># \<B> \<and> x \<in> bl \<longleftrightarrow> (\<B> rep x > 0)"
-  using rep_number_g0_exists
-  by (metis block_complement_elem_iff block_complement_inv wellformed)
-
-end
-
-
 context ordered_incidence_system
 begin
 
@@ -235,9 +199,6 @@ qed
 lemma dual_blocks_list_index_img: "image_mset (\<lambda>x . \<B>s* ! x) (mset_set {0..<length \<B>s*}) = mset \<B>s*"
   using lessThan_atLeast0 ordered_dual_sys.blocks_list_length ordered_dual_sys.blocks_mset_image by presburger
 
-lemma points_img_index_rep: "\<V> = image (\<lambda> j. \<V>s ! j) {0..<length \<V>s}"
-  using lessThan_atLeast0 points_list_length points_set_image by presburger
-
 lemma dual_blocks_points_index_inter: 
   assumes "i1 < \<b>" "i2 < \<b>"
   assumes "i1 \<noteq> i2"
@@ -352,22 +313,6 @@ qed
 
 end
 
-locale simple_const_intersect_design = const_intersect_design + simple_design
-
-context pairwise_balance
-begin
-
-lemma ordered_pbdI: 
-  assumes "\<B> = mset \<B>s" and "\<V> = set \<V>s" and "distinct \<V>s"
-  shows "ordered_pairwise_balance \<V>s \<B>s \<Lambda>"
-proof -
-  interpret ois: ordered_incidence_system \<V>s \<B>s 
-    using ordered_incidence_sysII assms finite_incidence_system_axioms by blast 
-  show ?thesis using b_non_zero blocks_nempty assms t_lt_order balanced  by (unfold_locales)(simp_all)
-qed
-
-end
-
 context ordered_pairwise_balance 
 begin
 
@@ -430,29 +375,8 @@ proof -
 qed
 end
 
-locale ordered_const_intersect_design = ordered_proper_design \<V>s \<B>s + const_intersect_design "set \<V>s" "mset \<B>s" \<m>
-  for \<V>s \<B>s \<m>
-begin 
-
-lemma blocks_index_ne_belong: 
-  assumes "i1 < length \<B>s"
-  assumes "i2 < length \<B>s"
-  assumes "i1 \<noteq> i2"
-  shows "\<B>s ! i2 \<in># \<B> - {#(\<B>s ! i1)#}"
-proof (cases "\<B>s ! i1 = \<B>s ! i2")
-  case True
-  then have "count (mset \<B>s) (\<B>s ! i1) \<ge> 2" using count_min_2_indices assms by fastforce
-  then have "count ((mset \<B>s) - {#(\<B>s ! i1)#}) (\<B>s ! i1) \<ge> 1"
-    by (metis Nat.le_diff_conv2 add_leD2 count_diff count_single nat_1_add_1) 
-  then show ?thesis
-    by (metis True count_inI not_one_le_zero)
-next
-  case False
-  have "\<B>s ! i2 \<in># \<B>" using assms
-    by simp 
-  then show ?thesis using False
-    by (metis in_remove1_mset_neq)
-qed
+context ordered_const_intersect_design
+begin
 
 lemma dual_is_balanced: 
   assumes "ps \<subseteq> {0..<length \<B>s}"
@@ -492,46 +416,6 @@ proof -
 qed
 
 end
-
-
-locale ordered_simple_des = ordered_design \<V>s \<B>s + simple_design "set \<V>s" "mset \<B>s" for \<V>s \<B>s
-begin
-
-lemma block_list_distinct: "distinct \<B>s"
-  using block_mset_distinct by auto
-
-lemma simp_blocks_length_card: "length \<B>s = card (set \<B>s)"
-  using design_support_def simple_block_size_eq_card by fastforce
-
-lemma blocks_index_inj_on: "inj_on (\<lambda> i . \<B>s ! i) {0..<length \<B>s}"
-  apply (auto simp add: inj_on_def)
-  by (metis simp_blocks_length_card card_distinct nth_eq_iff_index_eq)
-
-lemma x_in_block_set_img: assumes "x \<in> set \<B>s" shows "x \<in> (!) \<B>s ` {0..<length \<B>s}"
-proof -
-  obtain i where "\<B>s ! i = x" and "i < length \<B>s" using assms
-    by (meson in_set_conv_nth) 
-  thus ?thesis by auto
-qed
-
-lemma blocks_index_simp_bij_betw: "bij_betw (\<lambda> i . \<B>s ! i) {0..<length \<B>s} (set \<B>s)"
-  using blocks_index_inj_on x_in_block_set_img by (auto simp add: bij_betw_def) 
-
-lemma blocks_index_simp_unique: 
-  assumes "i1 < length \<B>s"
-  assumes "i2 < length \<B>s" 
-  assumes "i1 \<noteq> i2"
-  shows "\<B>s ! i1 \<noteq> \<B>s ! i2"
-  using block_list_distinct assms nth_eq_iff_index_eq by blast 
-
-end
-
-locale ordered_sym_bibd = ordered_bibd \<V>s \<B>s \<k> \<Lambda> + symmetric_bibd "set \<V>s" "mset \<B>s" \<k> \<Lambda> 
-  for \<V>s and \<B>s and \<k> and \<Lambda>
-
-
-sublocale ordered_sym_bibd \<subseteq> ordered_simple_des
-  by (unfold_locales)
 
 context ordered_sym_bibd
 begin
