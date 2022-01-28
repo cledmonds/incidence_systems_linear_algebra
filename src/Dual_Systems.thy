@@ -1,18 +1,6 @@
 theory Dual_Systems imports Incidence_Matrices
 begin
 
-lemma count_distinct_mset_list_index:
-  assumes "i1 < length xs"
-  assumes "i2 < length xs"
-  assumes "i1 \<noteq> i2"
-  assumes "distinct_mset (mset xs)"
-  shows "xs ! i1 \<noteq> xs ! i2"
-proof -
-  have "distinct xs" using assms by auto
-  show ?thesis
-    by (simp add: \<open>distinct xs\<close> assms(1) assms(2) assms(3) nth_eq_iff_index_eq) 
-qed
-
 definition dual_blocks :: "'a set \<Rightarrow> 'a set list \<Rightarrow> nat set multiset" where
 "dual_blocks \<V> \<B>s \<equiv> {# {y . y < length \<B>s \<and> x \<in> \<B>s ! y} . x \<in># (mset_set \<V>)#}"
 
@@ -378,22 +366,6 @@ proof -
   show ?thesis using b_non_zero blocks_nempty assms t_lt_order balanced  by (unfold_locales)(simp_all)
 qed
 
-lemma count_complete_lt_balance: "count \<B> \<V> \<le> \<Lambda>"
-proof (rule ccontr)
-  assume a: "\<not> count \<B> \<V> \<le> \<Lambda>"
-  then have assm: "count \<B> \<V> > \<Lambda>"
-    by simp
-  then have gt: "size {# bl \<in># \<B> . bl = \<V>#} > \<Lambda>"
-    by (simp add: count_size_set_repr) 
-  obtain ps where psss: "ps \<subseteq> \<V>" and pscard: "card ps = 2" using t_lt_order
-    by (meson obtain_t_subset_points) 
-  then have "{# bl \<in># \<B> . bl = \<V>#} \<subseteq># {# bl \<in># \<B> . ps \<subseteq> bl #}"
-    by (metis a balanced le_refl points_index_count_min) 
-  then have "size {# bl \<in># \<B> . bl = \<V>#} \<le> \<B> index ps " 
-    using points_index_def[of \<B> ps] size_mset_mono by simp
-  thus False using pscard psss balanced gt by auto
-qed
-
 end
 
 context ordered_pairwise_balance 
@@ -414,51 +386,6 @@ proof -
     using dual_blocks_inter_index assms by simp
   thus ?thesis using ss c balanced
     by blast 
-qed
-
-lemma index_remove1_mset_ne: 
-  assumes "x \<in># (mset xs)"
-  assumes "y \<in># remove1_mset x (mset xs)"
-  assumes "xs ! j1 = x"
-  assumes "j1 < length xs"
-  obtains j2 where "xs ! j2 = y" and "j2 < length xs" and "j1 \<noteq> j2"
-proof (cases "x = y")
-  case True
-  then have "count (mset xs) x \<ge> 2"
-    using assms(2) count_eq_zero_iff by fastforce 
-  then have crm: "count (remove1_mset x (mset xs)) x \<ge> 1"
-    by (metis True assms(2) count_greater_eq_one_iff)  
-  obtain ys zs where xseq: "xs = ys @ (x # zs)" and yseq: "ys = take j1 xs" and zseq: "zs = drop (Suc j1) xs"
-    using  assms(1) assms(3) id_take_nth_drop in_mset_conv_nth assms(4) by blast 
-  have "mset xs = mset ys + mset (x # zs)"
-    by (simp add: xseq)
-  then have "remove1_mset x (mset xs) = mset (ys) + mset (zs)"
-    using assms by simp  
-  then have "y \<in># (mset ys + mset zs)" using crm
-    using True \<open>remove1_mset x (mset xs) = mset ys + mset zs\<close> assms(2) by presburger 
-  then have yinor: "y \<in># mset ys \<or> y \<in># mset zs" by simp
-  then show ?thesis proof (cases "y \<in># mset ys")
-    case True
-    then obtain j2 where yeq: "ys ! j2 = y" and j2lt: "j2 < length ys"
-      by (meson in_mset_conv_nth)
-    then have 1: "xs ! j2 = y" using yseq by simp 
-    have "j2 < j1" using yseq j2lt by simp
-    then show ?thesis using that 1 j2lt xseq by simp
-  next
-    case False
-    then have "y \<in># mset zs" using yinor by simp
-    then obtain j2 where zsy: "zs ! j2 = y" and j2lt: "j2 < length zs"
-      by (meson in_mset_conv_nth) 
-    then have 1: "xs ! ((Suc j1) + j2) = y" using zseq zsy assms(4) by simp
-    have "length xs = (Suc j1) + length zs" using zseq xseq
-      by (metis Suc_diff_Suc add_Suc_shift add_diff_inverse_nat assms(4) length_drop less_imp_not_less) 
-    then have 2: "(Suc j1) + j2 < length xs" using j2lt by simp
-    then show ?thesis using 1 that by simp
-  qed
-next
-  case False
-  then show ?thesis
-    by (metis that assms(2) assms(3) in_diffD in_mset_conv_nth) 
 qed
 
 lemma dual_is_const_intersect_des: 
@@ -484,46 +411,6 @@ proof -
   qed
 qed
 
-lemma eq_index_rep_imp_complete: 
-  assumes "\<Lambda> = \<B> rep x"
-  assumes "x \<in> \<V>"
-  assumes "bl \<in># \<B>"
-  assumes "x \<in> bl"
-  shows "card bl = \<v>"
-proof -
-  have "\<And> y. y \<in> \<V> \<Longrightarrow> y \<noteq> x \<Longrightarrow> card {x, y} = 2 \<and> {x, y} \<subseteq> \<V>" using assms by simp
-  then have size_eq: "\<And> y. y \<in> \<V> \<Longrightarrow> y \<noteq> x \<Longrightarrow> size {# b \<in># \<B> . {x, y} \<subseteq> b#} = size {# b \<in># \<B> . x \<in> b#}"
-    using point_replication_number_def balanced points_index_def assms
-    by metis 
-  have "\<And> y b. y \<in> \<V> \<Longrightarrow> y \<noteq> x \<Longrightarrow> b \<in># \<B> \<Longrightarrow> {x, y} \<subseteq> b \<longrightarrow> x \<in> b" by simp
-  then have "\<And> y. y \<in> \<V> \<Longrightarrow> y \<noteq> x \<Longrightarrow> {# b \<in># \<B> . {x, y} \<subseteq> b#} \<subseteq># {# b \<in># \<B> . x \<in> b#}" 
-    using multiset_filter_mono2 assms by auto
-  then have eq_sets: "\<And> y. y \<in> \<V> \<Longrightarrow> y \<noteq> x \<Longrightarrow> {# b \<in># \<B> . {x, y} \<subseteq> b#} = {# b \<in># \<B> . x \<in> b#}" using size_eq
-    by (smt (z3) Diff_eq_empty_iff_mset cancel_comm_monoid_add_class.diff_cancel size_Diff_submset size_empty size_eq_0_iff_empty subset_mset.antisym) 
-  have "bl \<in># {# b \<in># \<B> . x \<in> b#}" using assms by simp
-  then have "\<And> y. y \<in> \<V> \<Longrightarrow> y \<noteq> x \<Longrightarrow> {x, y} \<subseteq> bl" using eq_sets
-    by (metis (no_types, lifting) Multiset.set_mset_filter mem_Collect_eq) 
-  then have "\<And> y. y \<in> \<V> \<Longrightarrow> y \<in> bl" using assms by blast 
-  then have "bl = \<V>" using wellformed assms(3) by blast 
-  thus ?thesis by simp
-qed
-
-lemma incomplete_index_strict_lt_rep:
-  assumes "\<And> bl. bl \<in># \<B> \<Longrightarrow> incomplete_block bl" 
-  assumes "x \<in> \<V>"
-  assumes "\<Lambda> > 0"
-  shows "\<Lambda> < \<B> rep x"
-proof (rule ccontr)
-  assume "\<not> (\<Lambda> < \<B> rep x)"
-  then have a: "\<Lambda> \<ge> \<B> rep x"
-    by simp
-  then have "\<Lambda> = \<B> rep x" using const_index_lt_rep
-    using assms(2) le_antisym by blast 
-  then obtain bl where xin: "x \<in> bl" and blin: "bl \<in># \<B>"
-    by (metis assms(3) rep_number_g0_exists) 
-  thus False using assms eq_index_rep_imp_complete incomplete_alt_size
-    using \<open>\<Lambda> = \<B> rep x\<close> nat_less_le by blast  
-qed
 
 lemma dual_is_simp_const_inter_des: 
   assumes "\<Lambda> > 0"
@@ -542,59 +429,6 @@ proof -
   show ?thesis by (unfold_locales)
 qed
 end
-
-lemma count_list_mset: "count_list xs x = count (mset xs) x"
-proof (induct xs)
-  case Nil
-  then show ?case by simp
-next
-  case (Cons a xs)
-  then show ?case proof (cases "a = x")
-    case True
-    have mset_add_split: "count (mset (a # xs)) x = count (add_mset a (mset xs)) x"
-      by simp
-    then have "count (mset (a # xs)) x = count (mset xs) x + 1"
-      by (metis True Suc_eq_plus1 count_add_mset) 
-    then show ?thesis using True Cons.hyps by simp
-  next
-    case False
-    then show ?thesis using Cons.hyps by simp
-  qed
-qed
-
-lemma count_min_2_indices_lt: 
-  assumes "i1 < i2"
-  assumes "xs ! i1 = x"
-  assumes "xs ! i2 = x"
-  assumes "i1 < length xs" "i2 < length xs"
-  shows "count (mset xs) x \<ge> 2"
-proof -
-  obtain xs1 xs2 where xse: "xs = xs1 @ xs2" and xs1: "xs1 = take i2 xs" and xs2: "xs2 = drop i2 xs"
-    by simp
-  have "i1 < length xs1" using assms length_take
-    by (simp add: assms(4) \<open>xs1 = take i2 xs\<close>) 
-  then have xs1in:  "xs ! i1 \<in># mset xs1"
-    by (simp add: nth_append xse) 
-  have "i2 \<ge> length xs1" using assms length_take xs1 by simp
-  then have xs2in: "xs ! i2 \<in># mset xs2" using xse nth_append
-    by (metis (no_types, lifting) assms(5) in_mset_conv_nth leD leI take_all_iff take_append)
-  have "count (mset xs) x = count ((mset xs1) + (mset xs2)) x"
-    by (simp add: xse) 
-  then have "count (mset xs) x = count (mset xs1) x + count (mset xs2) x" by simp
-  thus ?thesis using xs1in xs2in
-    by (metis add_mono assms(2) assms(3) count_greater_eq_one_iff nat_1_add_1) 
-qed
-
-lemma count_min_2_indices: 
-  assumes "i1 \<noteq> i2"
-  assumes "xs ! i1 = x"
-  assumes "xs ! i2 = x"
-  assumes "i1 < length xs" "i2 < length xs"
-  shows "count (mset xs) x \<ge> 2"
-  apply (cases "i1 < i2")
-   apply (simp add: assms count_min_2_indices_lt)
-  by (metis assms(1) assms(2) assms(3) assms(4) assms(5) count_min_2_indices_lt linorder_cases) 
-
 
 locale ordered_const_intersect_design = ordered_proper_design \<V>s \<B>s + const_intersect_design "set \<V>s" "mset \<B>s" \<m>
   for \<V>s \<B>s \<m>
@@ -659,15 +493,6 @@ qed
 
 end
 
-(* Symmetric bibd intro rules *)
-context bibd
-begin
-lemma symmetric_bibdIII: "\<r> = \<k> \<Longrightarrow> symmetric_bibd \<V> \<B> \<k> \<Lambda>"
-  using necessary_condition_one symmetric_condition_1 by(unfold_locales) (simp)
-end
-
-lemma (in simple_design) block_mset_distinct: "distinct_mset \<B>" using simple
-  by (simp add: distinct_mset_def) 
 
 locale ordered_simple_des = ordered_design \<V>s \<B>s + simple_design "set \<V>s" "mset \<B>s" for \<V>s \<B>s
 begin
