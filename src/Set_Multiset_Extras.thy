@@ -276,6 +276,11 @@ proof -
     using power2_eq_square by presburger 
 qed
 
+lemma double_sum_split_square_diff: 
+  assumes "finite {0..<x}" 
+  shows "(\<Sum> i \<in> {0..<x} . (\<Sum> j \<in> ({0..< x} - {i}) . c i * c j)) = (\<Sum> i \<in> {0..<x} . c i)^2 - (\<Sum> i \<in> {0..<x} . c i * c i)"
+    using double_sum_split_case_square[of "{0..<x}" "\<lambda> i. c i"] assms by fastforce
+
 end
 
 

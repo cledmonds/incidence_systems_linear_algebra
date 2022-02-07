@@ -294,37 +294,40 @@ proof -
   thus ?thesis using 1 by simp
 qed
 
-context vec_space
-begin 
-lemma lin_indpt_set_card_lt_dim: 
-  fixes A :: "'a vec set"
-  assumes "A \<subseteq> carrier_vec n"
-  assumes "lin_indpt A"
-  shows "card A \<le> dim"
-  using assms(1) assms(2) fin_dim li_le_dim(2) by blast
+abbreviation "rank v M \<equiv> vec_space.rank v M"
 
-lemma lin_indpt_dim_col_lt_dim: 
-  fixes A :: "'a mat"
-  assumes "A \<in> carrier_mat n nc"
-  assumes "distinct (cols A)"
-  assumes "lin_indpt (set (cols A))"
-  shows "nc \<le> dim"
+lemma rank_argument: 
+  fixes M :: "('c :: {conjugatable_ordered_field}) mat"
+  assumes "M \<in> carrier_mat x y"
+  assumes "vec_space.rank x (M* M\<^sup>T) = x"
+  shows "x \<le> y"
 proof -
-  have b: "card (set (cols A)) = dim_col A" using cols_length assms(2)
-    by (simp add: distinct_card) 
-  have "set (cols A) \<subseteq> carrier_vec n" using assms(1) cols_dim by blast
-  thus ?thesis using lin_indpt_set_card_lt_dim assms b by auto
+  let ?B = "(M * M\<^sup>T)"
+  have Mt_car: "M\<^sup>T \<in> carrier_mat y x" using assms by simp
+  have b_car: "?B \<in> carrier_mat x x"
+    using transpose_carrier_mat assms by simp
+  then have "rank x ?B \<le> min (rank x M) (rank y M\<^sup>T)" 
+    using rank_mat_mult_lt_min_rank_factor Mt_car b_car assms(1) by blast
+  thus ?thesis using le_trans vec_space.rank_le_nc 
+    by (metis assms(1) assms(2) min.bounded_iff)
 qed
 
-lemma lin_comb_imp_lin_dep_fin: 
-  fixes A :: "'a vec set"
-  assumes "finite A"
-  assumes "A \<subseteq> carrier_vec n"
-  assumes "lincomb c A = 0\<^sub>v n"
-  assumes "\<exists> a. a \<in> A \<and> c a \<noteq> 0"
-  shows "lin_dep A"
-  unfolding lin_dep_def using assms by auto
-
-end
+lemma rank_argument_det: 
+  fixes M :: "('c :: {conjugatable_ordered_field}) mat"
+  assumes "M \<in> carrier_mat x y"
+  assumes "det (M* M\<^sup>T) \<noteq> 0"
+  shows "x \<le> y"
+proof -
+  let ?B = "(M * M\<^sup>T)"
+  have Mt_car: "M\<^sup>T \<in> carrier_mat y x" using assms by simp
+  have b_car: "?B \<in> carrier_mat x x"
+    using transpose_carrier_mat assms by simp
+  then have b_rank: "vec_space.rank x ?B = x"
+    using vec_space.low_rank_det_zero assms(2) by blast
+  then have "rank x ?B \<le> min (rank x M) (rank y M\<^sup>T)" 
+    using rank_mat_mult_lt_min_rank_factor Mt_car b_car assms(1) by blast
+  thus ?thesis using le_trans vec_space.rank_le_nc 
+    by (metis assms(1) b_rank min.bounded_iff)
+qed
 
 end

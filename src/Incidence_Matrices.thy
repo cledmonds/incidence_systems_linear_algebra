@@ -1,31 +1,6 @@
 theory Incidence_Matrices imports "Design_Extras" Matrix_Vector_Extras "List-Index.List_Index"
  "Design_Theory.Design_Isomorphisms"
 begin
-(*
-lemma obtain_subset_with_card_n_with_x:
-  assumes "n \<le> card S"
-  assumes "x \<in> S"
-  assumes "n \<ge> 1"
-  assumes "finite S"
-  obtains T where "T \<subseteq> S" "card T = n" "finite T" "x \<in> T"
-proof -
-  have ne: "S \<noteq> {}" using assms(2) by auto
-  obtain n' where "card S = n + n'" 
-    by (metis assms(1) le_add_diff_inverse)
-  with that show thesis using assms
-  proof (induct n arbitrary: S)
-    case 0 
-    then show ?case by auto 
-  next
-    case Suc 
-    then show ?case 
-      apply (simp add: card_Suc_eq) 
-      using subset_insertI2 
-  qed
-qed
-
-*)
-
 
 (* Incidence vectors *)
 definition inc_vec_of :: "'a list \<Rightarrow> 'a set \<Rightarrow> int vec" where
@@ -72,13 +47,13 @@ lemma inc_mat_of_index [simp]: "i < dim_row (inc_mat_of Vs Bs) \<Longrightarrow>
   inc_mat_of Vs Bs $$ (i, j) = (if (Vs ! i) \<in> (Bs ! j) then 1 else 0)"
   by (simp add: inc_mat_of_def)
 
-lemma inc_mat_dim_row [simp]: "dim_row (inc_mat_of Vs Bs) = length Vs"
+lemma inc_mat_dim_row: "dim_row (inc_mat_of Vs Bs) = length Vs"
   by (simp add: inc_mat_of_def)
 
 lemma inc_mat_dim_vec_row: "dim_vec (row (inc_mat_of Vs Bs) i) = length Bs"
   by (simp add:  inc_mat_of_def)
 
-lemma inc_mat_dim_col [simp]: "dim_col (inc_mat_of Vs Bs) = length Bs"
+lemma inc_mat_dim_col: "dim_col (inc_mat_of Vs Bs) = length Bs"
   by (simp add:  inc_mat_of_def)
 
 lemma inc_mat_dim_vec_col: "dim_vec (col (inc_mat_of Vs Bs) i) = length Vs"
@@ -161,7 +136,7 @@ lemma inc_mat_col_list_map_elem:
 lemma inc_mat_col_list_map: 
   assumes "j < length Bs"
   shows "col (inc_mat_of Vs Bs) j = map_vec (\<lambda> x . if (x \<in> (Bs ! j)) then 1 else 0) (vec_of_list Vs)"
-  by(intro eq_vecI) (simp_all add: inc_mat_col_list_map_elem assms index_vec_of_list)
+  by(intro eq_vecI) (simp_all add: inc_mat_dim_row inc_mat_dim_col inc_mat_col_list_map_elem assms index_vec_of_list)
 
 lemma inc_mat_row_def: 
   assumes "j < length Bs"
@@ -178,7 +153,7 @@ lemma inc_mat_row_list_map_elem:
 lemma inc_mat_row_list_map: 
   assumes "i < length Vs"
   shows "row (inc_mat_of Vs Bs) i = map_vec (\<lambda> bl . if ((Vs ! i) \<in> bl) then 1 else 0) (vec_of_list Bs)"
-  by (intro eq_vecI) (simp_all add: inc_mat_row_list_map_elem assms index_vec_of_list)
+  by (intro eq_vecI) (simp_all add: inc_mat_dim_row inc_mat_dim_col inc_mat_row_list_map_elem assms index_vec_of_list)
 
 
 (* Relationship inc_vec and inc_mat *)
@@ -241,6 +216,9 @@ next
   then show "non_empty_col M j " using non_empty_col_def
     by (metis ilt2 vec_setI) 
 qed
+
+lemma mat_block_size_alt: "elements_mat M \<subseteq> {0, 1} \<Longrightarrow> j < dim_col M \<Longrightarrow> mat_block_size M j = sum_vec (col M j)"
+  using count_vec_sum_ones_alt by (meson col_elems_subset_mat subset_trans) 
 
 context finite_incidence_system
 begin
@@ -510,6 +488,9 @@ next
     by (metis zero_neq_one)
 qed
 
+lemma mat_block_size_alt: "j < dim_col M \<Longrightarrow> mat_block_size M j = sum_vec (col M j)"
+  using count_vec_sum_ones_alt col_elems_ss01 by auto
+
 lemma mat_rep_num_alt: 
   assumes "i < dim_row M"
   shows "mat_rep_num M i = card {j . j < dim_col M \<and> M $$ (i, j) = 1}"
@@ -617,7 +598,7 @@ proof -
   interpret mat: zero_one_matrix "(inc_mat_of Vs Bs)"
     using inc_mat_of_01_mat
     by auto 
-  have "dim_row (inc_mat_of Vs Bs) = length Vs" by simp
+  have "dim_row (inc_mat_of Vs Bs) = length Vs" by (simp add: inc_mat_dim_row) 
   then have "zero_one_matrix.map_to_points_ordered (inc_mat_of Vs Bs) = [0..<length Vs]" 
     by (simp add: mat.map_to_points_ordered_def)
   thus ?thesis using map_nth by auto
@@ -806,7 +787,7 @@ sublocale mat: zero_one_matrix "N"
 
 lemma N_alt_def_dim: "N = mat \<v> \<b> (\<lambda> (i,j) . if (incident (\<V>s ! i) (\<B>s ! j)) then 1 else 0) " 
   using incidence_cond_indexed inc_mat_of_def 
-  by (intro eq_matI) (simp_all add: inc_matrix_point_in_block_one inc_matrix_point_not_in_block_zero 
+  by (intro eq_matI) (simp_all add: inc_mat_dim_row inc_mat_dim_col inc_matrix_point_in_block_one inc_matrix_point_not_in_block_zero 
       points_list_length)
  
 lemma N_carrier_mat: "N \<in> carrier_mat \<v> \<b>" 
@@ -827,7 +808,7 @@ lemma dim_col_b_lt_iff: "j < \<b> \<longleftrightarrow> j < dim_col N"
   by (simp add: dim_col_is_b)
 
 lemma dim_row_v_lt_iff: "i < \<v> \<longleftrightarrow> i < dim_row N"
-  by (simp add: points_list_length)
+  by (simp add: dim_row_is_v)
 
 lemma dim_vec_col: "dim_vec (col N i) = \<v>"
   by (simp add: N_alt_def_dim)
@@ -949,7 +930,7 @@ lemma matrix_col_to_block_v2:
   assumes "j < \<b>"
   shows "\<B>s ! j = (\<lambda> k . \<V>s ! k) ` mat.map_col_to_block (col N j)"
   using matrix_col_to_block mat.map_col_to_block_def assms
-  by (simp add: points_list_length)
+  by (simp add: dim_row_is_v)
 
 lemma matrix_col_in_blocks: "j < \<b> \<Longrightarrow> (!) \<V>s ` mat.map_col_to_block (col N j) \<in># \<B>"
   using matrix_col_to_block_v2 by (metis (no_types, lifting) valid_blocks_index) 
@@ -1097,7 +1078,7 @@ proof -
     by (simp add: dim_col_is_b) 
   then have "((u\<^sub>v \<v>) \<^sub>v* N) $ j = (u\<^sub>v \<v>) \<bullet> col N j" using assms by simp 
   also have "... = (\<Sum> i \<in> {0 ..< \<v>}. (u\<^sub>v \<v>) $ i * (col N j) $ i)" 
-    by (simp add: scalar_prod_def points_list_length)
+    by (simp add: scalar_prod_def dim_row_is_v)
   also have "... = sum_vec (col N j)" using dim_row_is_v by (simp add: sum_vec_def)
   finally have "((u\<^sub>v \<v>) \<^sub>v* N) $ j = card (\<B>s ! j)" using block_size_mat_rep_sum assms by simp
   thus ?thesis by simp
@@ -1106,7 +1087,7 @@ qed
 lemma mat_block_size_conv: 
   assumes "j < dim_col N"
   shows "card (\<B>s ! j) = mat_block_size N j"
-  using assms by (simp add: block_size_mat_rep)
+  using assms by (simp add: block_size_mat_rep dim_col_is_b)
 
 lemma mat_inter_num_conv: 
   assumes "j1 < dim_col N" "j2 < dim_col N"
@@ -1114,7 +1095,7 @@ lemma mat_inter_num_conv:
 proof -
   have eq_sets: "\<And> P. (\<lambda> i . \<V>s ! i) ` {i \<in> {0..<\<v>}. P (\<V>s ! i)} = {x \<in> \<V> . P x}"
     by (metis Compr_image_eq points_img_index_rep points_list_length) 
-  have bin: "\<B>s ! j1 \<in># \<B>" "\<B>s ! j2 \<in># \<B>" using assms by simp_all
+  have bin: "\<B>s ! j1 \<in># \<B>" "\<B>s ! j2 \<in># \<B>" using assms dim_col_is_b by simp_all
   have "(\<B>s ! j1) |\<inter>| (\<B>s ! j2) = card ((\<B>s ! j1) \<inter> (\<B>s ! j2))" by (simp add: intersection_number_def)
   also have "... = card {x . x \<in> (\<B>s ! j1) \<and> x \<in> (\<B>s ! j2)}"
     by (simp add: Int_def) 
@@ -1143,11 +1124,11 @@ proof (intro iffI)
   then have "(col N j) $ i = 1"
     using assms mat.col_nth_0_or_1_iff by blast
   then have "\<V>s ! i \<in> \<B>s ! j"
-    by (smt (verit, best) assms ilt inc_mat_col_def inc_mat_dim_col inc_mat_dim_row) 
+    by (smt (verit, best) assms ilt inc_mat_col_def dim_col_is_b inc_mat_dim_col inc_mat_dim_row) 
   thus "\<B>s ! j \<noteq> {}" by blast
 next
   assume a: "\<B>s ! j \<noteq> {}"
-  have "\<B>s ! j \<in># \<B>" using assms by simp
+  have "\<B>s ! j \<in># \<B>" using assms dim_col_is_b by simp
   then obtain x where "x \<in> \<B>s ! j" and "x \<in> \<V>" using wellformed a by auto
   then obtain i where "\<V>s ! i \<in> \<B>s ! j" and "i < dim_row N" using dim_row_is_v
     using valid_points_index_cons by auto 
@@ -1167,15 +1148,15 @@ lemma mat_point_index_conv:
   assumes "I \<subseteq> {..<\<v>}"
   shows "mat_point_index N I = \<B> index ((\<lambda> i. \<V>s ! i) ` I)"
   unfolding  mat_point_index_def
-  using assms points_index_mat_rep[of I]  blocks_list_length
+  using assms points_index_mat_rep[of I]  dim_col_is_b
   by fastforce 
 
 lemma transpose_N_mult_dim: "dim_row (N * N\<^sup>T) = \<v>" "dim_col (N * N\<^sup>T) = \<v>"
-  by (simp_all add: points_list_length)
+  by (simp_all add: dim_row_is_v)
   
 lemma inc_matrix_points: "(\<lambda> x. \<V>s ! x) ` (mat.map_to_points) = \<V>"
-  apply (simp add: mat.map_to_points_def)
-  by (metis points_list_length lessThan_atLeast0 points_set_image)
+  apply (simp add: mat.map_to_points_def dim_row_is_v)
+  by (metis lessThan_atLeast0 points_set_image)
 
 
 
@@ -1183,10 +1164,10 @@ lemma dim_vec_N_col:
   assumes "j < \<b>"
   shows "dim_vec (cols N ! j) = \<v>"
 proof -
-  have "cols N ! j = col N j" using assms by simp
+  have "cols N ! j = col N j" using assms dim_col_is_b by simp
   then have "dim_vec (cols N ! j) = dim_vec (col N j)" by simp
   thus ?thesis using dim_col assms
-    by (simp add: points_list_length) 
+    by (simp add: dim_row_is_v) 
 qed
 
 lemma card_filter_point_indices: 
@@ -1214,6 +1195,110 @@ proof -
   thus ?thesis using cbl blis by simp
 qed
 
+lemma N_not_zero_simp: "j < \<b> \<Longrightarrow> i < \<v> \<Longrightarrow> N $$ (i, j) \<noteq> 0 \<Longrightarrow> N $$ (i, j) = 1"
+  using matrix_elems_one_zero by auto
+
+lemma N_not_one_simp: "j < \<b> \<Longrightarrow> i < \<v> \<Longrightarrow> N $$ (i, j) \<noteq> 1 \<Longrightarrow> N $$ (i, j) = 0"
+  using matrix_elems_one_zero by auto
+
+lemma N_index_square_itself: 
+  assumes "j < \<b>" "i < \<v>"
+  shows "(N $$ (i, j))^2 = N $$ (i, j)"
+    using N_not_zero_simp assms by (cases "N $$ (i, j) = 0")( simp_all, metis power_one) 
+
+lemma N_col_index_square_itself: 
+  assumes "j < \<b>" "i < \<v>"
+  shows "((col N j) $ i)^2 = (col N j) $ i"
+  using index_col N_index_square_itself[of j i] assms N_carrier_mat by auto
+
+lemma scalar_prod_inc_vec_block_size_mat:
+  assumes "j < \<b>"
+  shows "(col N j) \<bullet> (col N j) = mat_block_size N j"
+proof -
+  have "(col N j) \<bullet> (col N j) = (\<Sum> i \<in> {0..<\<v>} . (col N j) $ i * (col N j) $ i)" 
+     using assms dim_vec_N_col scalar_prod_def
+     by (metis (no_types, lifting) dim_vec_col sum.cong)
+  also have "... = (\<Sum> i \<in> {0..<\<v>} . ((col N j) $ i)^2)"
+    by (simp add: power2_eq_square ) 
+  also have "... = (\<Sum> i \<in> {0..<\<v>} . ((col N j) $ i))"
+    using N_col_index_square_itself assms by auto
+  finally show ?thesis using sum_vec_def
+    by (metis assms dim_col dim_col_is_b dim_row_is_v mat.mat_block_size_alt)
+qed
+
+
+lemma scalar_prod_inc_vec_block_size:
+  assumes "j < \<b>"
+  shows "(col N j) \<bullet> (col N j) = card (\<B>s ! j)"
+  using scalar_prod_inc_vec_block_size_mat assms block_size_mat_rep by presburger 
+
+lemma blocks_index_ne_belong: 
+  assumes "i1 < length \<B>s"
+  assumes "i2 < length \<B>s"
+  assumes "i1 \<noteq> i2"
+  shows "\<B>s ! i2 \<in># \<B> - {#(\<B>s ! i1)#}"
+proof (cases "\<B>s ! i1 = \<B>s ! i2")
+  case True
+  then have "count (mset \<B>s) (\<B>s ! i1) \<ge> 2" using count_min_2_indices assms by fastforce
+  then have "count ((mset \<B>s) - {#(\<B>s ! i1)#}) (\<B>s ! i1) \<ge> 1"
+    by (metis Nat.le_diff_conv2 add_leD2 count_diff count_single nat_1_add_1) 
+  then show ?thesis
+    by (metis True count_inI not_one_le_zero)
+next
+  case False
+  have "\<B>s ! i2 \<in># \<B>" using assms
+    by simp 
+  then show ?thesis using False
+    by (metis in_remove1_mset_neq)
+qed
+
+lemma inter_num_points_filter_def: 
+  assumes "j1 < \<b>" "j2 < \<b>" "j1 \<noteq> j2"
+  shows "card {x \<in> {0..<\<v>} . ((\<V>s ! x) \<in> (\<B>s ! j1) \<and> (\<V>s ! x) \<in> (\<B>s ! j2)) } = (\<B>s ! j1) |\<inter>| (\<B>s ! j2)"
+proof - 
+  have inter: "\<And> v. v \<in> \<V> \<Longrightarrow> v \<in> (\<B>s ! j1) \<and> v \<in> (\<B>s ! j2) \<longleftrightarrow> v \<in> (\<B>s ! j1) \<inter> (\<B>s ! j2)"
+    by simp 
+  obtain bl1 bl2 where bl1in: "bl1 \<in># \<B>" and bl1eq: "\<B>s ! j1 = bl1" and bl2in: "bl2 \<in># \<B> - {#bl1#}" and bl2eq: "\<B>s ! j2 = bl2" 
+    using assms obtains_two_diff_index
+    by (metis blocks_index_ne_belong size_mset valid_blocks_index) 
+  have "card {x \<in> {0..<\<v>} . (\<V>s ! x) \<in> (\<B>s ! j1) \<and> (\<V>s ! x) \<in> (\<B>s ! j2) } = card {v \<in> \<V> . v \<in> (\<B>s ! j1) \<and> v \<in> (\<B>s ! j2) }" 
+    using card_filter_point_indices by simp
+  also have "... = card {v \<in> \<V> . v \<in> bl1 \<and> v \<in> bl2 }" using bl1eq bl2eq by simp
+  finally show ?thesis using points_inter_num_rep bl1in bl2in
+    by (simp add: bl1eq bl2eq) 
+qed
+
+lemma scalar_prod_inc_vec_mat_inter_num: 
+  assumes "j1 < \<b>" "j2 < \<b>" "j1 \<noteq> j2"
+  shows "(col N j1) \<bullet> (col N j2) = mat_inter_num N j1 j2"
+proof -
+  have split: "{0..<\<v>} = {i \<in> {0..<\<v>} . (N $$ (i, j1) = 1) \<and> (N $$ (i, j2) = 1) } \<union> 
+    {i \<in> {0..<\<v>} . N $$ (i, j1) = 0 \<or> N $$ (i, j2) = 0}" using assms N_not_zero_simp by auto
+  have inter: "{i \<in> {0..<\<v>} . (N $$ (i, j1) = 1) \<and> (N $$ (i, j2) = 1) } \<inter> 
+    {i \<in> {0..<\<v>} . N $$ (i, j1) = 0 \<or> N $$ (i, j2) = 0} = {}" by auto
+  have "(col N j1) \<bullet> (col N j2) = (\<Sum> i \<in> {0..<\<v>} . (col N j1) $ i * (col N j2) $ i)" 
+    using assms dim_vec_N_col scalar_prod_def by (metis (full_types) dim_vec_col) 
+  also have "... = (\<Sum> i \<in> {0..<\<v>} . N $$ (i, j1) * N $$ (i, j2))" 
+    using N_carrier_mat assms by simp
+  also have "... = (\<Sum> i \<in> {i \<in> {0..<\<v>} . (N $$ (i, j1) = 1) \<and> (N $$ (i, j2) = 1) } . N $$ (i, j1) * N $$ (i, j2)) 
+      + (\<Sum> i \<in> {i \<in> {0..<\<v>} . N $$ (i, j1) = 0 \<or> N $$ (i, j2) = 0} . N $$ (i, j1) * N $$ (i, j2))" 
+    using split inter sum.union_disjoint[of " {i \<in> {0..<\<v>} . (N $$ (i, j1) = 1) \<and> (N $$ (i, j2) = 1) }" 
+        "{i \<in> {0..<\<v>} . N $$ (i, j1) = 0 \<or> N $$ (i, j2) = 0}" "\<lambda> i . N $$ (i, j1) * N $$ (i, j2)"]
+    by (metis (no_types, lifting) finite_Un finite_atLeastLessThan) 
+  also have "... = (\<Sum> i \<in> {i \<in> {0..<\<v>} . (N $$ (i, j1) = 1) \<and> (N $$ (i, j2) = 1) } . 1) 
+      + (\<Sum> i \<in> {i \<in> {0..<\<v>} . N $$ (i, j1) = 0 \<or> N $$ (i, j2) = 0} . 0)" 
+    using sum.cong  by (smt (z3) mem_Collect_eq mult_cancel_right1 mult_eq_0_iff) 
+  finally have "(col N j1) \<bullet> (col N j2) = card {i . i < \<v> \<and> (N $$ (i, j1) = 1) \<and> (N $$ (i, j2) = 1) }"
+    by simp 
+  then show ?thesis using mat_inter_num_def N_carrier_mat assms
+    by (metis (no_types, lifting) Collect_cong dim_row_is_v) 
+qed
+
+lemma scalar_prod_inc_vec_inter_num: 
+  assumes "j1 < \<b>" "j2 < \<b>" "j1 \<noteq> j2"
+  shows "(col N j1) \<bullet> (col N j2) = (\<B>s ! j1) |\<inter>| (\<B>s ! j2)"
+  using scalar_prod_inc_vec_mat_inter_num assms mat_inter_num_conv N_carrier_mat by simp
+
 lemma inc_matrix_col_block: 
   assumes "c \<in> set (cols N)"
   shows "(\<lambda> x. \<V>s ! x) ` (mat.map_col_to_block c) \<in># \<B>"
@@ -1228,7 +1313,7 @@ qed
 lemma inc_mat_ordered_blocks_Bs: "map (\<lambda> x. ((!) \<V>s) ` x) (mat.map_to_blocks_ordered) = \<B>s"
 proof (auto simp add: list_eq_iff_nth_eq)
   show lengtheq: "length (zero_one_matrix.map_to_blocks_ordered N) = length \<B>s"
-    by (simp add: mat.dim_col_length) 
+    by (simp add: mat.dim_col_length inc_mat_dim_col) 
   show "\<And>j i.
        j < length (zero_one_matrix.map_to_blocks_ordered N) \<Longrightarrow> i \<in> zero_one_matrix.map_to_blocks_ordered N ! j \<Longrightarrow> \<V>s ! i \<in> \<B>s ! j"
   proof -
@@ -1321,7 +1406,7 @@ proof (intro eq_matI)
            mat ordered_comp.\<v> \<b> (\<lambda>(i, j). if \<V>s ! i \<in> \<B>s ! j then 0 else 1) $$ (i, j)" 
     using complement_mat_entries_val by fastforce   
   show "dim_row ordered_comp.N = dim_row (mat ordered_comp.\<v> \<b> (\<lambda>(i, j). if \<V>s ! i \<in> \<B>s ! j then 0 else 1))"
-    by (simp add: ordered_comp.points_list_length)
+    by (simp add: ordered_comp.dim_row_is_v)
   show " dim_col ordered_comp.N =
     dim_col (mat ordered_comp.\<v> \<b> (\<lambda>(i, j). if \<V>s ! i \<in> \<B>s ! j then 0 else 1)) "
     by (simp add: ordered_comp.dim_col_is_b)
@@ -1411,7 +1496,7 @@ proof -
 qed
 
 lemma (in ordered_design) all_cols_non_empty: "j < dim_col N \<Longrightarrow> non_empty_col N j"
-  using blocks_nempty non_empty_col_map_conv
+  using blocks_nempty non_empty_col_map_conv dim_col_is_b
   by simp 
 end
 
@@ -1460,7 +1545,7 @@ locale ordered_proper_design = ordered_design \<V>s \<B>s + proper_design "set \
   for \<V>s and \<B>s
 begin
 lemma mat_is_proper: "proper_inc_mat N"
-  using design_blocks_nempty v_non_zero by (auto simp add: proper_inc_mat_def)
+  using design_blocks_nempty v_non_zero by (auto simp add: proper_inc_mat_def dim_row_is_v dim_col_is_b)
 end
 
 locale ordered_constant_rep = ordered_proper_design \<V>s \<B>s + constant_rep_design "set \<V>s" "mset \<B>s" \<r> 
@@ -1486,7 +1571,7 @@ proof -
     using assms(2) matrix_elems_one_zero by fastforce
   then have "(N * N\<^sup>T) $$ (i, j) = (\<Sum>k \<in>{0..<\<b>} . N $$ (i, k) * N $$ (j, k))"
     using assms(2) assms(3) transpose_mat_mult_entries[of "i" "N" "j"]
-    by (simp add: points_list_length dim_col_is_b) 
+    by (simp add: dim_row_is_v dim_col_is_b) 
   also have "... = (\<Sum>k \<in>{0..<\<b>} . (N $$ (i, k))^2)" using assms(1)
     by (simp add: power2_eq_square)
   also have "... = (\<Sum>k \<in>{0..<\<b>} . N $$ (i, k))"
@@ -1597,7 +1682,7 @@ proof -
   have fin2: "finite {k \<in> {0..<\<b>}. N $$ (i, k) = 0 \<or> N $$ (j, k) = 0}" by simp
   have "(N * N\<^sup>T) $$ (i, j) = (\<Sum>k \<in>{0..<\<b>} . N $$ (i, k) * N $$ (j, k))"
     using assms(2) assms(3) transpose_mat_mult_entries[of "i" "N" "j"]
-    by (simp add: points_list_length dim_col_is_b)
+    by (simp add: dim_row_is_v dim_col_is_b)
   also have "... = (\<Sum>k \<in>({k' \<in> {0..<\<b>}. N $$ (i, k') = 1 \<and> N $$ (j, k') = 1} \<union> {k' \<in> {0..<\<b>}. N $$ (i, k') = 0 \<or> N $$ (j, k') = 0}) . N $$ (i, k) * N $$ (j, k))"
     using split by metis
   also have "... = (\<Sum>k \<in>{k' \<in> {0..<\<b>}. N $$ (i, k') = 1 \<and> N $$ (j, k') = 1} . N $$ (i, k) * N $$ (j, k)) + 
@@ -1693,29 +1778,7 @@ sublocale ordered_sym_bibd \<subseteq> ordered_simple_design
 
 locale ordered_const_intersect_design = ordered_proper_design \<V>s \<B>s + const_intersect_design "set \<V>s" "mset \<B>s" \<m>
   for \<V>s \<B>s \<m>
-begin 
 
-lemma blocks_index_ne_belong: 
-  assumes "i1 < length \<B>s"
-  assumes "i2 < length \<B>s"
-  assumes "i1 \<noteq> i2"
-  shows "\<B>s ! i2 \<in># \<B> - {#(\<B>s ! i1)#}"
-proof (cases "\<B>s ! i1 = \<B>s ! i2")
-  case True
-  then have "count (mset \<B>s) (\<B>s ! i1) \<ge> 2" using count_min_2_indices assms by fastforce
-  then have "count ((mset \<B>s) - {#(\<B>s ! i1)#}) (\<B>s ! i1) \<ge> 1"
-    by (metis Nat.le_diff_conv2 add_leD2 count_diff count_single nat_1_add_1) 
-  then show ?thesis
-    by (metis True count_inI not_one_le_zero)
-next
-  case False
-  have "\<B>s ! i2 \<in># \<B>" using assms
-    by simp 
-  then show ?thesis using False
-    by (metis in_remove1_mset_neq)
-qed
-
-end
 
 locale simp_ordered_const_intersect_design = ordered_const_intersect_design + ordered_simple_design
 begin 
@@ -1769,20 +1832,11 @@ proof -
   thus ?thesis by (simp add: const_intersect)
 qed
 
-lemma inter_num_points_filter_def: 
+lemma scalar_prod_inc_vec_const_inter: 
   assumes "j1 < \<b>" "j2 < \<b>" "j1 \<noteq> j2"
-  shows "card {x \<in> {0..<\<v>} . ((\<V>s ! x) \<in> (\<B>s ! j1) \<and> (\<V>s ! x) \<in> (\<B>s ! j2)) } = \<m>"
-proof - 
-  have inter: "\<And> v. v \<in> \<V> \<Longrightarrow> v \<in> (\<B>s ! j1) \<and> v \<in> (\<B>s ! j2) \<longleftrightarrow> v \<in> (\<B>s ! j1) \<inter> (\<B>s ! j2)"
-    by simp 
-  obtain bl1 bl2 where bl1in: "bl1 \<in># \<B>" and bl1eq: "\<B>s ! j1 = bl1" and bl2in: "bl2 \<in># \<B> - {#bl1#}" and bl2eq: "\<B>s ! j2 = bl2" 
-    using assms obtains_two_diff_index by metis
-  have "card {x \<in> {0..<\<v>} . (\<V>s ! x) \<in> (\<B>s ! j1) \<and> (\<V>s ! x) \<in> (\<B>s ! j2) } = card {v \<in> \<V> . v \<in> (\<B>s ! j1) \<and> v \<in> (\<B>s ! j2) }" 
-    using card_filter_point_indices by simp
-  also have "... = card {v \<in> \<V> . v \<in> bl1 \<and> v \<in> bl2 }" using bl1eq bl2eq by simp
-  finally show ?thesis using points_inter_num_rep bl1in bl2in
-    by blast
-qed
+  shows "(col N j1) \<bullet> (col N j2) = \<m>"
+  using scalar_prod_inc_vec_inter_num indexed_const_intersect assms by simp
+
 end
 
 context zero_one_matrix
@@ -2102,51 +2156,4 @@ lemma equal_inc_mat_isomorphism_obtain:
 
 end
 
-(* 
-lemma ones_incidence_mat_block_size: 
-  assumes "j < \<b>"
-  shows "((u\<^sub>v \<v>) \<^sub>v* N) $ j = card (\<B>s ! j)
-proof - 
-  have "dim_vec ((u\<^sub>v \<v>) \<^sub>v* N) = \<b>"
-    by (simp add: dim_col_is_b) 
-  then have "((u\<^sub>v \<v>) \<^sub>v* N) $ j = (u\<^sub>v \<v>) \<bullet> col N j" using assms by simp 
-  also have "... = (\<Sum> i \<in> {0 ..< \<v>}. (u\<^sub>v \<v>) $ i * (col N j) $ i)" 
-    by (simp add: scalar_prod_def dim_row_is_v)
-  also have "... = sum_vec (col N j)" using dim_row_is_v by (simp add: sum_vec_def)
-  finally have "((u\<^sub>v \<v>) \<^sub>v* N) $ j = card (\<B>s ! j)" using block_size_mat_rep_sum assms by simp
-  thus ?thesis by simp
-qed
-*)
-
-(* Reasoning on incidence matrices outside of locale context *)
-
-
-
-(*
-
-I need something on equivalence of incidence matrices (isomorphic elems etc)
-(* Theorem 1.15 *)
-lemma incidence_sys_exists_iff_matrix: 
-  assumes "incidence_matrix M"
-  assumes "dim_row M = v"
-  assumes "dim_col M = b"
-  shows "ordered_regular_pairwise_balance V B Vs Bs \<Lambda> r \<and> is_incidence_matrix M Vs Bs  \<longleftrightarrow> M * (M\<^sup>T) = \<Lambda> \<cdot>\<^sub>m (J\<^sub>m v) + (r - \<Lambda>) \<cdot>\<^sub>m (1\<^sub>m v)"
-proof (intro iffI conjI)
-  show " ordered_regular_pairwise_balance V B Vs Bs \<Lambda> r \<and> is_incidence_matrix M Vs Bs \<Longrightarrow> M * M\<^sup>T = int \<Lambda> \<cdot>\<^sub>m J\<^sub>m v + (int r - int \<Lambda>) \<cdot>\<^sub>m 1\<^sub>m v"
-  proof -
-    assume a: "ordered_regular_pairwise_balance V B Vs Bs \<Lambda> r \<and> is_incidence_matrix M Vs Bs"
-    then have a1: "ordered_regular_pairwise_balance V B Vs Bs \<Lambda> r" by (rule conjunct1)
-    have a2: "is_incidence_matrix M Vs Bs" using a by (rule conjunct2)
-    interpret rpb: ordered_regular_pairwise_balance V B Vs Bs \<Lambda> r using a1 by simp
-    have "rpb.N = M"
-      by (metis a2 is_incidence_matrix_def) 
-    then show "M * M\<^sup>T = int \<Lambda> \<cdot>\<^sub>m J\<^sub>m v + (int r - int \<Lambda>) \<cdot>\<^sub>m 1\<^sub>m v"
-      using rpb.rpbd_incidence_matrix_cond assms
-      by (metis of_nat_diff rpb.dim_row_is_v rpb.reg_index_lt_rep) 
-  qed
-  show "M * M\<^sup>T = int \<Lambda> \<cdot>\<^sub>m J\<^sub>m v + (int r - int \<Lambda>) \<cdot>\<^sub>m 1\<^sub>m v \<Longrightarrow> ordered_regular_pairwise_balance V B Vs Bs \<Lambda> r"
-    sorry
-  show "M * M\<^sup>T = int \<Lambda> \<cdot>\<^sub>m J\<^sub>m v + (int r - int \<Lambda>) \<cdot>\<^sub>m 1\<^sub>m v \<Longrightarrow> is_incidence_matrix M Vs Bs "
-
-*)
 end

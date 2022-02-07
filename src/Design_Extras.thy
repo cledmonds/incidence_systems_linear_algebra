@@ -76,6 +76,18 @@ next
     by (metis add_block_def add_block_index_not_in assms(3) insert_DiffM2) 
 qed
 
+lemma points_inter_num_rep: 
+  assumes "b1 \<in># \<B>" and "b2 \<in># \<B> - {#b1#}"
+  shows "card {v \<in> \<V> . v \<in> b1 \<and> v \<in> b2} = b1 |\<inter>| b2"
+proof -
+  have "\<And> x. x \<in> b1 \<inter> b2 \<Longrightarrow> x \<in> \<V>" using wellformed assms by auto
+  then have "{v \<in> \<V> . v \<in> (b1 \<inter> b2)} = (b1 \<inter> b2)"
+    by blast 
+  then have "card {v \<in> \<V> . v \<in> b1 \<and> v \<in> b2} = card (b1 \<inter> b2)"
+    by simp 
+  thus ?thesis using assms intersection_number_def by metis 
+qed
+
 end
 
 context finite_incidence_system
@@ -593,19 +605,6 @@ proof -
   also have "... \<le> card \<V>" using finite_sets
     using card_mono eqv by blast 
   finally show ?thesis by simp
-qed
-
-lemma points_inter_num_rep: 
-  assumes "b1 \<in># \<B>" and "b2 \<in># \<B> - {#b1#}"
-  shows "card {v \<in> \<V> . v \<in> b1 \<and> v \<in> b2} = \<m>"
-proof -
-  have "\<And> x. x \<in> b1 \<inter> b2 \<Longrightarrow> x \<in> \<V>" using wellformed assms by auto
-  then have "{v \<in> \<V> . v \<in> (b1 \<inter> b2)} = (b1 \<inter> b2)"
-    by blast 
-  then have "card {v \<in> \<V> . v \<in> b1 \<and> v \<in> b2} = card (b1 \<inter> b2)"
-    by simp 
-  thus ?thesis using assms const_intersect intersection_number_def
-    by metis 
 qed
 
 end

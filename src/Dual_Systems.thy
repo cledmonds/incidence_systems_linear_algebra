@@ -65,7 +65,7 @@ proof (intro eq_matI)
   show dimr: "dim_row ordered_dual_sys.N = dim_row N\<^sup>T" using dual_blocks_v
     by (simp add: dim_col_is_b ordered_dual_sys.dim_row_is_v) 
   show dimc: "dim_col ordered_dual_sys.N = dim_col N\<^sup>T" using ord_dual_blocks_b 
-    by (simp add: points_list_length ordered_dual_sys.dim_col_is_b)
+    by (simp add: dim_row_is_v ordered_dual_sys.dim_col_is_b)
   show "\<And>i j. i < dim_row N\<^sup>T \<Longrightarrow> j < dim_col N\<^sup>T \<Longrightarrow> ordered_dual_sys.N $$ (i, j) = N\<^sup>T $$ (i, j)" 
   proof -
     fix i j assume ilt: "i < dim_row N\<^sup>T" assume jlt: "j < dim_col N\<^sup>T"

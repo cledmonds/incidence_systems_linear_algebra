@@ -430,7 +430,11 @@ next
   fix xa assume "xa \<in> elements_mat A" 
   then obtain i j where "i < dim_row A" and "j < dim_col A" and "A $$ (i, j) = xa" by auto
   then show "f xa \<in> elements_mat (map_mat f A)" by auto
-qed
+qed  
+
+lemma set_cols_carrier:
+  assumes "A \<in> carrier_mat m n" and "v \<in> set (cols A)" shows "v \<in> carrier_vec m"
+  using assms by (auto simp: cols_def)
 
 section \<open> Vector and Matrix Homomorphism \<close>
 
@@ -445,6 +449,7 @@ lemma  vec_hom_smult:
   unfolding scalar_prod_def using index_map_vec assms by (auto simp add: hom_distribs)
 
 end
+
 
 lemma map_vec_vCons: "vCons (f a) (map_vec f v) = map_vec f (vCons a v)"
   by (intro eq_vecI, simp_all add: vec_index_vCons)
@@ -494,6 +499,18 @@ next
   finally show ?case using map_vec_vCons
     by metis 
 qed
+
+lemma mat_hom_col: 
+  assumes "M = map_mat hom N"
+  assumes "j < dim_col N"
+  shows "col M j = map_vec hom (col N j)"
+  by (simp add: assms(1) assms(2))
+
+lemma mat_hom_row: 
+  assumes "M = map_mat hom N"
+  assumes "i < dim_row N"
+  shows "row M i = map_vec hom (row N i)"
+  by (simp add: assms(1) assms(2))
 
 end
 
