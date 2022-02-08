@@ -1,3 +1,7 @@
+(* Title: Linear_Bound_Argument.thy
+   Author: Chelsea Edmonds
+*)
+
 theory Linear_Bound_Argument imports Incidence_Matrices Jordan_Normal_Form.DL_Rank Jordan_Normal_Form.Ring_Hom_Matrix
 begin
 
@@ -68,7 +72,6 @@ lemma lin_comb_mat_lin_indpt_vs:
 
 
 end
-(* lincomb f (set ws) = lincomb_list (\<lambda>i. f (ws ! i)) ws*)
 
 lemma lin_bound_arg_general_set: 
   fixes A ::"('a :: {field})vec set"

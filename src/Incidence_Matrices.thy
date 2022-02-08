@@ -1,3 +1,7 @@
+(* Title: Incidence_Matrices.thy
+   Author: Chelsea Edmonds
+*)
+
 theory Incidence_Matrices imports "Design_Extras" Matrix_Vector_Extras "List-Index.List_Index"
  "Design_Theory.Design_Isomorphisms"
 begin

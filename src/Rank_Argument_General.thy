@@ -1,4 +1,8 @@
-theory Rank_Argument_General imports Dual_Systems Jordan_Normal_Form.Determinant 
+(* Title: Rank_Argument_General.thy
+   Author: Chelsea Edmonds
+*)
+
+theory Rank_Argument_General imports Dual_Systems Jordan_Normal_Form.Determinant
 Jordan_Normal_Form.DL_Rank Jordan_Normal_Form.Ring_Hom_Matrix BenOr_Kozen_Reif.More_Matrix
 begin
 

@@ -1,4 +1,4 @@
-(* Title: Matrix_Vector_Extras 
+(* Title: Matrix_Vector_Extras.thy 
    Author: Chelsea Edmonds
 *)
 

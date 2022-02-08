@@ -1,3 +1,7 @@
+(* Title: Fishers_Inequality.thy
+   Author: Chelsea Edmonds
+*)
+
 theory Fishers_Inequality imports Rank_Argument_General Linear_Bound_Argument
 begin
 
@@ -6,7 +10,7 @@ begin
 context ordered_bibd
 begin
 
-(* Note, some of this should be generalised *)
+(* Note, some of this could be generalised further *)
 
 lemma transform_N_step1: 
   assumes "i < dim_row (N * N\<^sup>T)"

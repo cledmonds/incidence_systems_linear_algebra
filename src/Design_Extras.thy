@@ -1,4 +1,4 @@
-(* Title: Design Extras
+(* Title: Design Extras.thy
    Author: Chelsea Edmonds
 *)
 

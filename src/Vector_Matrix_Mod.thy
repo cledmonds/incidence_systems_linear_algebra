@@ -1,3 +1,7 @@
+(* Title: Vector_Matrix_Mod.thy
+   Author: Chelsea Edmonds
+*)
+
 theory Vector_Matrix_Mod imports Matrix_Vector_Extras
 Berlekamp_Zassenhaus.Finite_Field Berlekamp_Zassenhaus.More_Missing_Multiset  
 begin

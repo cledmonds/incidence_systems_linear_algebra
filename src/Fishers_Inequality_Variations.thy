@@ -1,4 +1,8 @@
-theory Fishers_Inequality_Variations imports Dual_Systems Rank_Argument_General 
+(* Title: Fishers_Inequality_Variations.thy
+   Author: Chelsea Edmonds
+*)
+
+theory Fishers_Inequality_Variations imports Dual_Systems Rank_Argument_General
 Vector_Matrix_Mod Linear_Bound_Argument
 begin
 

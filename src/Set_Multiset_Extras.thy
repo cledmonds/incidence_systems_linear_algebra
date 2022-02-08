@@ -1,4 +1,8 @@
-theory Set_Multiset_Extras imports Design_Theory.Multisets_Extras "HOL-Combinatorics.Multiset_Permutations" 
+(* Title: Set_Multiset_Extras.thy
+   Author: Chelsea Edmonds
+*)
+
+theory Set_Multiset_Extras imports Design_Theory.Multisets_Extras "HOL-Combinatorics.Multiset_Permutations"
 begin
 
 section \<open>Micellaneous Multset/Set Extras \<close>

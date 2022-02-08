@@ -1,3 +1,7 @@
+(* Title: Dual_Systems.thy
+   Author: Chelsea Edmonds
+*)
+
 theory Dual_Systems imports Incidence_Matrices
 begin
 
