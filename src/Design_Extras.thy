@@ -2,23 +2,24 @@
    Author: Chelsea Edmonds
 *)
 
+section \<open> Micellaneous Design Extras \<close>
+
+text \<open>Extension's to the author's previous entry on Design Theory \<close>
+
 theory Design_Extras imports Set_Multiset_Extras Design_Theory.BIBD
 begin
 
-section \<open> Micellaneous Design Extras \<close>
+subsection \<open>Extensions to existing Locales and Properties \<close>
 
-(* Intersect Number *)
+text \<open>Extend lemmas on intersection number\<close>
 lemma inter_num_max_bound: 
   assumes "finite b1" "finite b2"
   shows "b1 |\<inter>| b2 \<le> card b1" "b1 |\<inter>| b2 \<le> card b2"
   by(simp_all add: assms intersection_number_def card_mono)
 
-lemma inter_eq_blocks_eq_card: 
-  assumes "card b1 = card b2"
-  assumes "finite b1" "finite b2"
-  assumes "b1 |\<inter>| b2 = card b1"
-  shows "b1 = b2"
-  using equal_card_inter_fin_eq_sets intersection_number_def assms by (metis) 
+lemma inter_eq_blocks_eq_card: "card b1 = card b2 \<Longrightarrow> finite b1 \<Longrightarrow> finite b2 \<Longrightarrow> b1 |\<inter>| b2 = card b1 
+    \<Longrightarrow> b1 = b2"
+  using equal_card_inter_fin_eq_sets intersection_number_def by (metis) 
 
 lemma inter_num_of_eq_blocks: "b1 = b2 \<Longrightarrow> b1 |\<inter>| b2 = card b1"
   by (simp add: intersection_number_def)
@@ -26,13 +27,13 @@ lemma inter_num_of_eq_blocks: "b1 = b2 \<Longrightarrow> b1 |\<inter>| b2 = card
 lemma intersect_num_same_eq_size[simp]: "bl |\<inter>| bl = card bl"
   by (simp add: intersection_number_def)
 
-lemma index_lt_rep_general: 
-  assumes "x \<in> ps"
-  shows " B index ps \<le> B rep x"
-  by (simp add: points_index_def point_replication_number_def) (metis assms filter_filter_mset_cond_simp size_filter_mset_lesseq subset_iff)
+lemma index_lt_rep_general: "x \<in> ps \<Longrightarrow> B index ps \<le> B rep x"
+  by (simp add: points_index_def point_replication_number_def) 
+    (metis filter_filter_mset_cond_simp size_filter_mset_lesseq subset_iff)
 
 context incidence_system 
 begin
+
 lemma block_size_alt:
   assumes "bl \<in># \<B>"
   shows "card bl = card {x \<in> \<V> . x \<in> bl}" 
@@ -51,8 +52,19 @@ lemma point_in_block_rep_min_iff:
   using rep_number_g0_exists
   by (metis block_complement_elem_iff block_complement_inv wellformed)
 
+lemma points_inter_num_rep: 
+  assumes "b1 \<in># \<B>" and "b2 \<in># \<B> - {#b1#}"
+  shows "card {v \<in> \<V> . v \<in> b1 \<and> v \<in> b2} = b1 |\<inter>| b2"
+proof -
+  have "\<And> x. x \<in> b1 \<inter> b2 \<Longrightarrow> x \<in> \<V>" using wellformed assms by auto
+  then have "{v \<in> \<V> . v \<in> (b1 \<inter> b2)} = (b1 \<inter> b2)"
+    by blast 
+  then have "card {v \<in> \<V> . v \<in> b1 \<and> v \<in> b2} = card (b1 \<inter> b2)"
+    by simp 
+  thus ?thesis using assms intersection_number_def by metis 
+qed
 
-(* Design operations *)
+text \<open>Extensions on design operation lemmas \<close>
 lemma del_block_b: 
   "bl \<in># \<B> \<Longrightarrow> size (del_block bl) = \<b> - 1"
   "bl \<notin># \<B> \<Longrightarrow> size (del_block bl) = \<b>"
@@ -76,19 +88,9 @@ next
     by (metis add_block_def add_block_index_not_in assms(3) insert_DiffM2) 
 qed
 
-lemma points_inter_num_rep: 
-  assumes "b1 \<in># \<B>" and "b2 \<in># \<B> - {#b1#}"
-  shows "card {v \<in> \<V> . v \<in> b1 \<and> v \<in> b2} = b1 |\<inter>| b2"
-proof -
-  have "\<And> x. x \<in> b1 \<inter> b2 \<Longrightarrow> x \<in> \<V>" using wellformed assms by auto
-  then have "{v \<in> \<V> . v \<in> (b1 \<inter> b2)} = (b1 \<inter> b2)"
-    by blast 
-  then have "card {v \<in> \<V> . v \<in> b1 \<and> v \<in> b2} = card (b1 \<inter> b2)"
-    by simp 
-  thus ?thesis using assms intersection_number_def by metis 
-qed
-
 end
+
+text \<open>Extensions to properties of design sub types \<close>
 
 context finite_incidence_system
 begin
@@ -119,20 +121,17 @@ proof -
     proof (cases "bl \<in># \<B>")
       case True
       then obtain x where xin: "x \<in> \<V>" and blin: "bl \<in># filter_mset ((\<in>) x) \<B>" using exists by auto
-      then have eq: "count \<B> bl = count (filter_mset ((\<in>) x) \<B>) bl"
-        by simp 
+      then have eq: "count \<B> bl = count (filter_mset ((\<in>) x) \<B>) bl" by simp 
       have "(\<Sum>v\<in>#mset_set \<V>. filter_mset ((\<in>) v) \<B>) = (filter_mset ((\<in>) x) \<B>) + 
         (\<Sum>v\<in>#(mset_set \<V>) - {#x#}. filter_mset ((\<in>) v) \<B>)"
         using xin by (simp add: finite_sets mset_set.remove) 
-      then have "count (\<Sum>v\<in>#mset_set \<V>. filter_mset ((\<in>) v) \<B>) bl = count (filter_mset ((\<in>) x) \<B>) bl + 
-        count (\<Sum>v\<in>#(mset_set \<V>) - {#x#}. filter_mset ((\<in>) v) \<B>) bl"
+      then have "count (\<Sum>v\<in>#mset_set \<V>. filter_mset ((\<in>) v) \<B>) bl = count (filter_mset ((\<in>) x) \<B>) bl 
+        +  count (\<Sum>v\<in>#(mset_set \<V>) - {#x#}. filter_mset ((\<in>) v) \<B>) bl"
         by simp
-      then show ?thesis using eq
-        by linarith 
+      then show ?thesis using eq by linarith 
     next
       case False
-      then show ?thesis
-        by (metis count_eq_zero_iff le0)
+      then show ?thesis by (metis count_eq_zero_iff le0)
     qed
   qed
   have "(\<Sum> x \<in> \<V>. \<B> rep x) = (\<Sum> x \<in> \<V>. size ({#b \<in># \<B>. x \<in> b#}))" 
@@ -142,8 +141,7 @@ proof -
   also have "... = (\<Sum> x \<in># (image_mset (\<lambda> v. {#b \<in># \<B>. v \<in> b#}) (mset_set \<V>)) . size x)"
     by auto  
   finally have "(\<Sum> x \<in> \<V>. \<B> rep x) = size (\<Sum>\<^sub># (image_mset (\<lambda> v. {#b \<in># \<B>. v \<in> b#}) (mset_set \<V>)))" 
-    using size_big_union_sum
-    by metis 
+    using size_big_union_sum by metis 
   then show ?thesis using bss
     by (simp add: size_mset_mono)
 qed
@@ -194,8 +192,10 @@ lemma block_mset_distinct: "distinct_mset \<B>" using simple
   by (simp add: distinct_mset_def) 
 
 end
+
 context constant_rep_design 
 begin
+
 lemma index_lt_const_rep: 
   assumes "ps \<subseteq> \<V>"
   assumes "ps \<noteq> {}"
@@ -225,7 +225,8 @@ next
   case False
   have "\<t> - 1 \<le> card (\<V> - {x})"
     by (simp add: assms diff_le_mono finite_sets t_lt_order) 
-  then obtain ps' where psss: "ps' \<subseteq> (\<V> - {x})" and psc: "card ps' = \<t> - 1" by (meson obtain_subset_with_card_n)
+  then obtain ps' where psss: "ps' \<subseteq> (\<V> - {x})" and psc: "card ps' = \<t> - 1" 
+    by (meson obtain_subset_with_card_n)
   then have xs: "(insert x ps') \<subseteq> \<V>"
     using assms by blast 
   have xnotin: "x \<notin> ps'" using psss
@@ -244,7 +245,8 @@ lemma const_index_lt_rep:
   assumes "x \<in> \<V>"
   shows "\<Lambda>\<^sub>t \<le> \<B> rep x"
 proof -
-  obtain ps where psin: "ps \<subseteq> \<V>" and "card ps = \<t>" and xin: "x \<in> ps" using assms t_lt_order obtain_t_subset_with_point by auto
+  obtain ps where psin: "ps \<subseteq> \<V>" and "card ps = \<t>" and xin: "x \<in> ps" 
+    using assms t_lt_order obtain_t_subset_with_point by auto
   then have "\<B> index ps = \<Lambda>\<^sub>t " using balanced by simp
   thus ?thesis using index_lt_rep_general xin 
     by (meson) 
@@ -310,13 +312,13 @@ lemma eq_index_rep_imp_complete:
 proof -
   have "\<And> y. y \<in> \<V> \<Longrightarrow> y \<noteq> x \<Longrightarrow> card {x, y} = 2 \<and> {x, y} \<subseteq> \<V>" using assms by simp
   then have size_eq: "\<And> y. y \<in> \<V> \<Longrightarrow> y \<noteq> x \<Longrightarrow> size {# b \<in># \<B> . {x, y} \<subseteq> b#} = size {# b \<in># \<B> . x \<in> b#}"
-    using point_replication_number_def balanced points_index_def assms
-    by metis 
+    using point_replication_number_def balanced points_index_def assms by metis 
   have "\<And> y b. y \<in> \<V> \<Longrightarrow> y \<noteq> x \<Longrightarrow> b \<in># \<B> \<Longrightarrow> {x, y} \<subseteq> b \<longrightarrow> x \<in> b" by simp
   then have "\<And> y. y \<in> \<V> \<Longrightarrow> y \<noteq> x \<Longrightarrow> {# b \<in># \<B> . {x, y} \<subseteq> b#} \<subseteq># {# b \<in># \<B> . x \<in> b#}" 
     using multiset_filter_mono2 assms by auto
-  then have eq_sets: "\<And> y. y \<in> \<V> \<Longrightarrow> y \<noteq> x \<Longrightarrow> {# b \<in># \<B> . {x, y} \<subseteq> b#} = {# b \<in># \<B> . x \<in> b#}" using size_eq
-    by (smt (z3) Diff_eq_empty_iff_mset cancel_comm_monoid_add_class.diff_cancel size_Diff_submset size_empty size_eq_0_iff_empty subset_mset.antisym) 
+  then have eq_sets: "\<And> y. y \<in> \<V> \<Longrightarrow> y \<noteq> x \<Longrightarrow> {# b \<in># \<B> . {x, y} \<subseteq> b#} = {# b \<in># \<B> . x \<in> b#}" 
+    using size_eq by (smt (z3) Diff_eq_empty_iff_mset cancel_comm_monoid_add_class.diff_cancel 
+        size_Diff_submset size_empty size_eq_0_iff_empty subset_mset.antisym) 
   have "bl \<in># {# b \<in># \<B> . x \<in> b#}" using assms by simp
   then have "\<And> y. y \<in> \<V> \<Longrightarrow> y \<noteq> x \<Longrightarrow> {x, y} \<subseteq> bl" using eq_sets
     by (metis (no_types, lifting) Multiset.set_mset_filter mem_Collect_eq) 
@@ -341,6 +343,8 @@ proof (rule ccontr)
   thus False using assms eq_index_rep_imp_complete incomplete_alt_size
     using \<open>\<Lambda> = \<B> rep x\<close> nat_less_le by blast  
 qed
+
+text \<open>Construct new PBD's from existing PBD's \<close>
 
 lemma remove_complete_block_pbd: 
   assumes "\<b> \<ge> 2"
@@ -435,11 +439,14 @@ end
 context bibd
 begin
 lemma symmetric_bibdIII: "\<r> = \<k> \<Longrightarrow> symmetric_bibd \<V> \<B> \<k> \<Lambda>"
-  using necessary_condition_one symmetric_condition_1 by(unfold_locales) (simp)
+  using necessary_condition_one symmetric_condition_1 by (unfold_locales) (simp)
 end
 
-section \<open> New Locales \<close>
+subsection \<open> New Design Locales \<close>
+text \<open> We establish a number of new locales and link them to the existing locale hierarchy
+in order to reason in contexts requiring specific combinations of contexts \<close>
 
+text \<open>Regular t-wise balance \<close>
 locale regular_t_wise_balance = t_wise_balance + constant_rep_design
 begin
 
@@ -459,9 +466,8 @@ end
 locale regular_pairwise_balance = regular_t_wise_balance \<V> \<B> 2 \<Lambda> \<r> + pairwise_balance \<V> \<B> \<Lambda>
   for \<V> and \<B> and \<Lambda> and \<r>
 
-
-
-section \<open> Const Intersect Design \<close>
+text \<open> Const Intersect Design \<close>
+text \<open> This is the dual of a balanced design, and used extensively in the remaining formalisation \<close>
 
 locale const_intersect_design = proper_design + 
   fixes \<m> :: nat
@@ -480,8 +486,8 @@ lemma inter_num_le_block_size:
 proof (rule ccontr)
   assume a: "\<not> (\<m> \<le> card bl)"
   obtain bl' where blin: "bl' \<in># \<B> - {#bl#}"
-    using assms
-    by (metis add_mset_add_single diff_add_inverse2 diff_is_0_eq' multiset_nonemptyE nat_1_add_1 remove1_mset_eqE size_single zero_neq_one)
+    using assms by (metis add_mset_add_single diff_add_inverse2 diff_is_0_eq' multiset_nonemptyE 
+        nat_1_add_1 remove1_mset_eqE size_single zero_neq_one)
   then have const: "bl |\<inter>| bl' = \<m>" using const_intersect assms by auto
   thus False using inter_num_max_bound(1) finite_blocks 
     by (metis a blin assms(1) finite_blocks in_diffD) 
@@ -516,10 +522,8 @@ proof (rule ccontr)
   thus False using assms(2) by simp
 qed
 
-lemma simple_const_inter_block_size: 
-  assumes "(\<And> bl. bl \<in># \<B> \<Longrightarrow> \<m> < card bl)"
-  shows "simple_design \<V> \<B>"
-  using const_inter_multiplicity_one assms by (unfold_locales) (simp)
+lemma simple_const_inter_block_size: "(\<And> bl. bl \<in># \<B> \<Longrightarrow> \<m> < card bl) \<Longrightarrow> simple_design \<V> \<B>"
+  using const_inter_multiplicity_one by (unfold_locales) (simp)
 
 lemma simple_const_inter_iff: 
   assumes "\<b> \<ge> 2"
@@ -556,11 +560,12 @@ next
   proof (rule ccontr)
     assume "\<not> size {#bl \<in># \<B>. card bl = \<m>#} \<le> 1"
     then have "size {#bl \<in># \<B> . card bl = \<m> #} > 1" by simp
-    then obtain bl1 bl2 where blin: "bl1 \<in># \<B>" and "bl2 \<in># \<B> - {#bl1#}" and "card bl1 = \<m>" and "card bl2 = \<m>"
+    then obtain bl1 bl2 where blin: "bl1 \<in># \<B>" and bl2in: "bl2 \<in># \<B> - {#bl1#}" and 
+        card1: "card bl1 = \<m>" and card2: "card bl2 = \<m>"
       using obtain_two_items_mset_filter by blast 
     then have "bl1 |\<inter>| bl2 = \<m>" using const_intersect by simp
     then have "bl1 = bl2"
-      by (metis \<open>bl1 \<in># \<B>\<close> \<open>bl2 \<in># remove1_mset bl1 \<B>\<close> \<open>card bl1 = \<m>\<close> \<open>card bl2 = \<m>\<close> finite_blocks in_diffD inter_eq_blocks_eq_card)
+      by (metis blin bl2in card1 card2 finite_blocks in_diffD inter_eq_blocks_eq_card)
     then have "multiplicity bl1 > 1"
       using \<open>bl2 \<in># remove1_mset bl1 \<B>\<close> count_eq_zero_iff by force 
     thus False using mult blin by simp
@@ -572,12 +577,12 @@ lemma empty_inter_implies_rep_one:
   assumes "x \<in> \<V>"
   shows "\<B> rep x \<le> 1"
 proof (rule ccontr)
-  assume "\<not> \<B> rep x \<le> 1"
+  assume a: "\<not> \<B> rep x \<le> 1"
   then have gt1: "\<B> rep x > 1" by simp
   then obtain bl1 where blin1: "bl1 \<in># \<B>" and xin1: "x \<in> bl1"
     by (metis gr_implies_not0 linorder_neqE_nat rep_number_g0_exists) 
-  then have "(\<B> - {#bl1#}) rep x > 0" using gt1
-    by (metis \<open>\<not> \<B> rep x \<le> 1\<close> add_0 eq_imp_le neq0_conv point_rep_number_split point_rep_singleton_val remove1_mset_eqE) 
+  then have "(\<B> - {#bl1#}) rep x > 0" using gt1 point_rep_number_split point_rep_singleton_val
+    by (metis a add_0 eq_imp_le neq0_conv remove1_mset_eqE) 
   then obtain bl2 where blin2: "bl2 \<in># (\<B> - {#bl1#})" and xin2: "x \<in> bl2" 
     by (metis rep_number_g0_exists) 
   then have "x \<in> (bl1 \<inter> bl2)" using xin1 by simp
@@ -594,7 +599,8 @@ proof -
   have disj: "{v \<in> \<V> . \<B> rep v = 0} \<inter> {v \<in> \<V> . \<not> (\<B> rep v = 0)} = {}" by auto
   have eqv: "\<V> = ({v \<in> \<V> . \<B> rep v = 0} \<union> {v \<in> \<V> . \<not> (\<B> rep v = 0)})" by auto
   have "\<b> \<le> (\<Sum> x \<in> \<V> . \<B> rep x)" using block_num_rep_bound by simp
-  also have 1: "... \<le> (\<Sum> x \<in> ({v \<in> \<V> . \<B> rep v = 0} \<union> {v \<in> \<V> . \<not> (\<B> rep v = 0)}) . \<B> rep x)" using eqv by simp
+  also have 1: "... \<le> (\<Sum> x \<in> ({v \<in> \<V> . \<B> rep v = 0} \<union> {v \<in> \<V> . \<not> (\<B> rep v = 0)}) . \<B> rep x)" 
+    using eqv by simp
   also have "... \<le> (\<Sum> x \<in> ({v \<in> \<V> . \<B> rep v = 0}) . \<B> rep x) + (\<Sum> x \<in> ({v \<in> \<V> . \<not> (\<B> rep v = 0)}) . \<B> rep x)"
     using sum.union_disjoint finite_sets eqv disj
     by (metis (no_types, lifting) 1 finite_Un) 

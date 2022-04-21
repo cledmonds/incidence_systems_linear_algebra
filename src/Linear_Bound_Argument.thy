@@ -1,10 +1,16 @@
 (* Title: Linear_Bound_Argument.thy
    Author: Chelsea Edmonds
 *)
-
-theory Linear_Bound_Argument imports Incidence_Matrices Jordan_Normal_Form.DL_Rank Jordan_Normal_Form.Ring_Hom_Matrix
+section \<open>Linear Bound Argument - General \<close>
+text \<open>Lemmas to enable general reasoning using the linear bound argument for combinatorial proofs.
+Jukna \cite{juknaExtremalCombinatorics2011} presents a good overview of the mathematical background 
+this theory is based on and applications \<close>
+theory Linear_Bound_Argument imports Incidence_Matrices Jordan_Normal_Form.DL_Rank 
+Jordan_Normal_Form.Ring_Hom_Matrix
 begin
 
+subsection \<open>Vec Space Extensions\<close>
+text \<open>Simple extensions to the existing vector space locale on linear independence \<close>
 context vec_space
 begin 
 lemma lin_indpt_set_card_lt_dim: 
@@ -36,6 +42,8 @@ lemma lin_comb_imp_lin_dep_fin:
   shows "lin_dep A"
   unfolding lin_dep_def using assms lincomb_as_lincomb_list_distinct sumlist_nth by auto
 
+text \<open>While a trivial definition, this enables us to directly reference the definition outside
+of a locale context, as @{term "lin_indpt"} is an inherited definition \<close>
 definition lin_indpt_vs:: "'a vec set \<Rightarrow> bool" where
 "lin_indpt_vs A \<longleftrightarrow> lin_indpt A"
 
@@ -46,7 +54,6 @@ lemma lin_comb_sum_lin_indpt:
   assumes "\<And> f. lincomb_list (\<lambda>i. f (A ! i)) A = 0\<^sub>v n \<Longrightarrow> \<forall>v\<in> (set A). f v = 0"
   shows "lin_indpt (set A)"
   by (rule finite_lin_indpt2, auto simp add: assms lincomb_as_lincomb_list_distinct)
-
 
 lemma lin_comb_mat_lin_indpt: 
   fixes A :: "'a vec list"
@@ -73,6 +80,11 @@ lemma lin_comb_mat_lin_indpt_vs:
 
 end
 
+subsection \<open>Linear Bound Argument Lemmas\<close>
+
+text \<open>Three general representations of the linear bound argument, requiring a direct fact of 
+linear independence onthe rows of the vector space over either a set A of vectors, list xs of vectors
+or a Matrix' columns \<close>
 lemma lin_bound_arg_general_set: 
   fixes A ::"('a :: {field})vec set"
   assumes "A \<subseteq> carrier_vec nr"
@@ -103,7 +115,8 @@ proof -
   thus ?thesis using lin_bound_arg_general_list[of "cols A" "nr"] ss assms by simp
 qed
 
-
+text\<open>The linear bound argument lemma on a matrix requiring the lower level assumption on a linear
+combination. This removes the need to directly refer to any aspect of the linear algebra libraries \<close>
 lemma lin_bound_argument: 
   fixes A :: "('a :: {field}) mat"
   assumes "distinct (cols A)"
@@ -120,25 +133,29 @@ next
       using assms(2) by force
     show "dim_col A = nc " using assms by simp
   qed
-  then show "\<And>f. mat_of_cols nr (cols A) *\<^sub>v vec (dim_col A) (\<lambda>i. f (cols A ! i)) = 0\<^sub>v nr \<Longrightarrow> \<forall>v\<in>set (cols A). f v = 0"
+  then show "\<And>f. mat_of_cols nr (cols A) *\<^sub>v vec (dim_col A) (\<lambda>i. f (cols A ! i)) = 0\<^sub>v nr \<Longrightarrow> 
+      \<forall>v\<in>set (cols A). f v = 0"
     using mA assms(3) by metis
 qed
 
+text \<open>A further extension to present the linear combination directly as a sum. This manipulation from 
+vector product to a summation was found to commonly be repeated in proofs applying this rule \<close>
 lemma lin_bound_argument2: 
   fixes A :: "('a :: {field}) mat"
   assumes "distinct (cols A)"
   assumes "A \<in> carrier_mat nr nc"
-  assumes "\<And> f. vec nr (\<lambda>i. \<Sum> j \<in> {0..<nc} . f (col A j) * (col A j) $ i) = 0\<^sub>v nr \<Longrightarrow> \<forall>v\<in> (set (cols A)). f v = 0"
+  assumes "\<And> f. vec nr (\<lambda>i. \<Sum> j \<in> {0..<nc} . f (col A j) * (col A j) $ i) = 0\<^sub>v nr \<Longrightarrow> 
+    \<forall>v\<in> (set (cols A)). f v = 0"
   shows "nc \<le> nr"
 proof (intro lin_bound_argument[of A nr nc], simp add: assms, simp add: assms)
   fix f 
-  have "A *\<^sub>v vec nc (\<lambda>i. f (col A i)) = vec (dim_row A) (\<lambda>i. \<Sum> j \<in> {0..<nc} . (row A i $ j) * f (col A j))"
+  have "A *\<^sub>v vec nc (\<lambda>i. f (col A i)) = 
+      vec (dim_row A) (\<lambda>i. \<Sum> j \<in> {0..<nc} . (row A i $ j) * f (col A j))"
     by (auto simp add: mult_mat_vec_def scalar_prod_def assms(2)) 
-  then have "A *\<^sub>v vec nc (\<lambda>i. f (col A i)) = vec (dim_row A) (\<lambda>i. \<Sum> j \<in> {0..<nc} . f (col A j) * (col A j $ i))"
+  also have "... = vec (dim_row A) (\<lambda>i. \<Sum> j \<in> {0..<nc} . f (col A j) * (col A j $ i))"
     using assms(2) by (intro eq_vecI, simp_all) (meson mult.commute) 
-  then show "A *\<^sub>v vec nc (\<lambda>i. f (col A i)) = 0\<^sub>v nr \<Longrightarrow> \<forall>v\<in>set (cols A). f v = 0" 
+  finally show "A *\<^sub>v vec nc (\<lambda>i. f (col A i)) = 0\<^sub>v nr \<Longrightarrow> \<forall>v\<in>set (cols A). f v = 0" 
     using assms(3)[of f] assms(2) by fastforce 
 qed
-
 
 end

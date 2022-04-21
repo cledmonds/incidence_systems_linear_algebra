@@ -2,13 +2,15 @@
    Author: Chelsea Edmonds
 *)
 
+section \<open>Micellaneous Multset/Set Extras \<close>
+
 theory Set_Multiset_Extras imports Design_Theory.Multisets_Extras "HOL-Combinatorics.Multiset_Permutations"
 begin
 
-section \<open>Micellaneous Multset/Set Extras \<close>
-
-(* SET THEORY *)
-lemma equal_card_inter_fin_eq_sets: "finite A \<Longrightarrow> finite B \<Longrightarrow> card A = card B \<Longrightarrow> card (A \<inter> B) = card A \<Longrightarrow> A = B"
+subsection \<open> Set extras \<close>
+text \<open> Minor set extras on cardinality and filtering \<close>
+lemma equal_card_inter_fin_eq_sets: "finite A \<Longrightarrow> finite B \<Longrightarrow> card A = card B \<Longrightarrow> 
+  card (A \<inter> B) = card A \<Longrightarrow> A = B"
   by (metis Int_lower1 Int_lower2 card_subset_eq)
 
 lemma insert_filter_set_true: "P x \<Longrightarrow> {a \<in> (insert x A) . P a} = insert x {a \<in> A . P a}"
@@ -18,7 +20,8 @@ lemma insert_filter_set_false: "\<not> P x \<Longrightarrow> {a \<in> (insert x 
   by auto  
 
 
-(* MULTISET *)
+subsection \<open>Multiset Extras \<close>
+text \<open> Minor multiset extras on size and element reasoning \<close> 
 
 lemma obtain_two_items_mset: 
   assumes "size A > 1"
@@ -41,10 +44,10 @@ proof -
   obtain x y where xin: "x \<in># {#a \<in># A . P a #}" and yin: "y \<in># {#a \<in># A . P a #} - {#x#}"
     using obtain_two_items_mset assms by blast
   then have xdets: "x \<in># A" "P x" by auto
-  then have "y \<in># {#a \<in># (A - {#x#}) . P a #}" using yin
+  then have yin2: "y \<in># {#a \<in># (A - {#x#}) . P a #}" using yin
     by force 
   then have "y \<in># (A - {#x#})" "P y"
-    by (metis multiset_partition union_iff) (meson \<open>y \<in># filter_mset P (remove1_mset x A)\<close> filter_mset_eq_conv) 
+    by (metis multiset_partition union_iff) (meson yin2 filter_mset_eq_conv) 
   thus ?thesis using xdets that by blast
 qed
 
@@ -77,17 +80,23 @@ lemma mset_list_by_index: "mset (xs) = image_mset (\<lambda> i . (xs ! i)) (mset
 lemma count_mset_split_image_filter: 
   assumes "\<And> x. x \<in>#A \<Longrightarrow> a \<noteq> g x"
   shows "count (image_mset (\<lambda>x. if P x then a else g x) A ) a = size (filter_mset P A)"
-using image_mset_If by (smt (verit) assms count_size_set_repr filter_mset_cong image_mset_filter_swap size_image_mset) 
+  using image_mset_If image_mset_filter_swap size_image_mset 
+  by (smt (verit) assms count_size_set_repr filter_mset_cong) 
 
 lemma count_mset_split_image_filter_not: 
   assumes "\<And> x. x \<in>#A \<Longrightarrow> b \<noteq> f x"
   shows "count (image_mset (\<lambda>x. if P x then f x else b) A ) b = size (filter_mset (\<lambda> x. \<not> P x) A)"
-  using image_mset_If by (smt (verit) assms count_size_set_repr filter_mset_cong image_mset_filter_swap size_image_mset) 
+  using image_mset_If image_mset_filter_swap size_image_mset
+  by (smt (verit) assms count_size_set_repr filter_mset_cong) 
 
 lemma removeAll_size_lt: "size (removeAll_mset C M) \<le> size M"
   by (simp add: size_mset_mono)
 
-(* Permutations of Sets Extras *)
+lemma mset_image_eq_filter_eq: "A = image_mset f B \<Longrightarrow> 
+  filter_mset P A = (image_mset f (filter_mset (\<lambda> x. P (f x)) B))"
+  by (simp add: filter_mset_image_mset)
+
+subsection \<open>Permutation on Sets and Multisets \<close>
 
 lemma elem_permutation_of_set_empty_iff: "finite A \<Longrightarrow> xs \<in> permutations_of_set A \<Longrightarrow> 
     xs = [] \<longleftrightarrow> A = {}"
@@ -96,25 +105,12 @@ lemma elem_permutation_of_set_empty_iff: "finite A \<Longrightarrow> xs \<in> pe
 lemma elem_permutation_of_mset_empty_iff: "xs \<in> permutations_of_multiset A \<Longrightarrow> xs = [] \<longleftrightarrow> A = {#}"
   using permutations_of_multisetD by fastforce
 
-(* Filter Image *)
+subsection \<open> Lists \<close>
+text \<open>Further lemmas on the relationship between lists and multisets \<close>
 
-lemma mset_image_eq_filter_eq: "A = image_mset f B \<Longrightarrow> 
-  filter_mset P A = (image_mset f (filter_mset (\<lambda> x. P (f x)) B))"
-  by (simp add: filter_mset_image_mset)
-
-(* List Extras *)
-
-lemma count_distinct_mset_list_index:
-  assumes "i1 < length xs"
-  assumes "i2 < length xs"
-  assumes "i1 \<noteq> i2"
-  assumes "distinct_mset (mset xs)"
-  shows "xs ! i1 \<noteq> xs ! i2"
-proof -
-  have "distinct xs" using assms by auto
-  show ?thesis
-    by (simp add: \<open>distinct xs\<close> assms(1) assms(2) assms(3) nth_eq_iff_index_eq) 
-qed
+lemma count_distinct_mset_list_index: "i1 < length xs \<Longrightarrow> i2 < length xs \<Longrightarrow> i1 \<noteq> i2 \<Longrightarrow>
+    distinct_mset (mset xs) \<Longrightarrow> xs ! i1 \<noteq> xs ! i2"
+  by (simp add:  nth_eq_iff_index_eq) 
 
 lemma index_remove1_mset_ne: 
   assumes "x \<in># (mset xs)"
@@ -203,56 +199,54 @@ proof -
     by (metis add_mono assms(2) assms(3) count_greater_eq_one_iff nat_1_add_1) 
 qed
 
-lemma count_min_2_indices: 
-  assumes "i1 \<noteq> i2"
-  assumes "xs ! i1 = x"
-  assumes "xs ! i2 = x"
-  assumes "i1 < length xs" "i2 < length xs"
-  shows "count (mset xs) x \<ge> 2"
-  apply (cases "i1 < i2")
-   apply (simp add: assms count_min_2_indices_lt)
-  by (metis assms(1) assms(2) assms(3) assms(4) assms(5) count_min_2_indices_lt linorder_cases) 
+lemma count_min_2_indices: "i1 \<noteq> i2 \<Longrightarrow> xs ! i1 = x \<Longrightarrow> xs ! i2 = x \<Longrightarrow> i1 < length xs \<Longrightarrow> 
+  i2 < length xs \<Longrightarrow> count (mset xs) x \<ge> 2"
+  apply (cases "i1 < i2", simp add: count_min_2_indices_lt)
+  by (metis count_min_2_indices_lt linorder_cases) 
 
 lemma obtain_set_list_item: 
   assumes "x \<in> set xs"
   obtains i where "i < length xs" and "xs ! i = x"
   by (meson assms in_set_conv_nth)
 
+subsection \<open>Summation Rules\<close>
 
-(* Summation Rules *)
-
+text \<open> Some lemmas to make it simpler to work with double and triple summations \<close>
 context comm_monoid_add
 begin
 
-lemma sum_reorder_triple: "(\<Sum> l \<in> A . (\<Sum> i \<in> B . (\<Sum> j \<in> C . g l i j))) = (\<Sum> i \<in> B . (\<Sum> j \<in> C . (\<Sum> l \<in> A . g l i j)))"
+lemma sum_reorder_triple: "(\<Sum> l \<in> A . (\<Sum> i \<in> B . (\<Sum> j \<in> C . g l i j))) = 
+  (\<Sum> i \<in> B . (\<Sum> j \<in> C . (\<Sum> l \<in> A . g l i j)))"
 proof -
   have "(\<Sum> l \<in> A . (\<Sum> i \<in> B . (\<Sum> j \<in> C . g l i j))) = (\<Sum>i \<in> B . (\<Sum> l \<in> A  . (\<Sum> j \<in> C . g l i j)))"
-    using sum.swap[of "(\<lambda> l i . (\<Sum> j \<in> C . g l i j))"  "B" "A"] by simp
+    using sum.swap[of "(\<lambda> l i . (\<Sum> j \<in> C . g l i j))" "B" "A"] by simp
   also have "...  = (\<Sum>i \<in> B . (\<Sum> j \<in> C . (\<Sum>l \<in> A . g l i j)))" using sum.swap by metis
   finally show ?thesis by simp
 qed
 
-lemma double_sum_mult_hom: "(\<Sum> i \<in> A . (\<Sum> j \<in> g i . (k ::('b :: {comm_ring_1})) * (f i j))) = k* (\<Sum> i \<in> A . (\<Sum> j \<in> g i . f i j))"
+lemma double_sum_mult_hom: 
+  fixes k :: "'b :: {comm_ring_1}"
+  shows "(\<Sum> i \<in> A . (\<Sum> j \<in> g i . k * (f i j))) = k* (\<Sum> i \<in> A . (\<Sum> j \<in> g i . f i j))"
   by (metis (mono_tags, lifting) comm_monoid_add_class.sum.cong sum_distrib_left)
 
 lemma double_sum_split_case: 
   assumes "finite A"
   shows "(\<Sum> i \<in> A . (\<Sum> j \<in> A . f i j)) = (\<Sum> i \<in> A . (f i i)) + (\<Sum> i \<in> A . (\<Sum> j \<in> (A - {i}) . f i j))" 
 proof -
-  have "\<And> i. i \<in> A \<Longrightarrow> (\<Sum> j \<in> A . f i j) = f i i + (\<Sum> j \<in> (A - {i}) . f i j)" using sum.remove assms
-    by metis 
-  then have "(\<Sum> i \<in> A . (\<Sum> j \<in> A . f i j)) = (\<Sum> i \<in> A . f i i + (\<Sum> j \<in> (A - {i}) . f i j))" by simp
-  then show ?thesis
-    by (simp add: sum.distrib) 
+  have "\<And> i. i \<in> A \<Longrightarrow> (\<Sum> j \<in> A . f i j) = f i i + (\<Sum> j \<in> (A - {i}) . f i j)" 
+    using sum.remove assms by metis 
+  then show ?thesis by (simp add: sum.distrib) 
 qed
                
-lemma double_sum_split_case2: "(\<Sum> i \<in> A . (\<Sum> j \<in> A . g i j)) = (\<Sum> i \<in> A . (g i i)) + (\<Sum> i \<in> A . (\<Sum> j \<in> {a \<in> A . a \<noteq> i} . g i j)) " 
+lemma double_sum_split_case2: "(\<Sum> i \<in> A . (\<Sum> j \<in> A . g i j)) = 
+  (\<Sum> i \<in> A . (g i i)) + (\<Sum> i \<in> A . (\<Sum> j \<in> {a \<in> A . a \<noteq> i} . g i j)) " 
 proof - 
   have "\<And> i. A = {a \<in> A . a = i} \<union> {a \<in> A . a \<noteq> i}" by auto
   then have part: "\<And> i. i \<in> A \<Longrightarrow> A = {i} \<union> {a \<in> A . a \<noteq> i}" by auto
   have empt:"\<And> i. {i} \<inter> {a \<in> A . a \<noteq> i} = {}"
     by simp 
-  then have "(\<Sum> i \<in> A . (\<Sum> j \<in> A . g i j)) = (\<Sum> i \<in> A . ((\<Sum> j \<in> {i} . g i j) + (\<Sum> j \<in> {a \<in> A . a \<noteq> i} . g i j)))" using part
+  then have "(\<Sum> i \<in> A . (\<Sum> j \<in> A . g i j)) = 
+    (\<Sum> i \<in> A . ((\<Sum> j \<in> {i} . g i j) + (\<Sum> j \<in> {a \<in> A . a \<noteq> i} . g i j)))" using part
     by (smt (verit) finite_Un local.sum.cong local.sum.infinite local.sum.union_disjoint) 
   also have "... = (\<Sum> i \<in> A . ((\<Sum> j \<in> {i} . g i j))) + (\<Sum> i \<in> A . (\<Sum> j \<in> {a \<in> A . a \<noteq> i} . g i j))"
     by (simp add: local.sum.distrib) 
@@ -271,22 +265,19 @@ proof -
   have "(\<Sum> i \<in> A . f i )^2 = (\<Sum> i \<in> A . f i) * (\<Sum> i \<in> A . f i)"
     using power2_eq_square by blast
   then have "(\<Sum> i \<in> A . f i) * (\<Sum> i \<in> A . f i) = (\<Sum> i \<in> A . f i) * (\<Sum> j \<in> A . f j)" by simp
-  also have "... = (\<Sum> i \<in> A . f i * (\<Sum> j \<in> A . f j))" using sum_distrib_right by simp
-  also have "... = (\<Sum> i \<in> A .  (\<Sum> j \<in> A . f i * f j))" using sum_distrib_left by metis 
-  finally have "(\<Sum> i \<in> A . f i) * (\<Sum> i \<in> A . f i) = (\<Sum> i \<in> A . (f i * f i)) + (\<Sum> i \<in> A . (\<Sum> j \<in> (A - {i}) . f i * f j))" 
-    using assms double_sum_split_case[of "A" "\<lambda> i j . f i * f j"]
-    using \<open>(\<Sum>i\<in>A. f i * sum f A) = (\<Sum>i\<in>A. \<Sum>j\<in>A. f i * f j)\<close> \<open>sum f A * sum f A = (\<Sum>i\<in>A. f i * sum f A)\<close> by presburger 
+  also have 1: "... = (\<Sum> i \<in> A . f i * (\<Sum> j \<in> A . f j))" using sum_distrib_right by simp
+  also have 2: "... = (\<Sum> i \<in> A .  (\<Sum> j \<in> A . f i * f j))" using sum_distrib_left by metis 
+  finally have "(\<Sum> i \<in> A . f i) * (\<Sum> i \<in> A . f i) = 
+    (\<Sum> i \<in> A . (f i * f i)) + (\<Sum> i \<in> A . (\<Sum> j \<in> (A - {i}) . f i * f j))" 
+    using assms double_sum_split_case[of "A" "\<lambda> i j . f i * f j"] 1 2 by presburger 
   then show ?thesis
     using power2_eq_square by presburger 
 qed
 
-lemma double_sum_split_square_diff: 
-  assumes "finite {0..<x}" 
-  shows "(\<Sum> i \<in> {0..<x} . (\<Sum> j \<in> ({0..< x} - {i}) . c i * c j)) = (\<Sum> i \<in> {0..<x} . c i)^2 - (\<Sum> i \<in> {0..<x} . c i * c i)"
-    using double_sum_split_case_square[of "{0..<x}" "\<lambda> i. c i"] assms by fastforce
+lemma double_sum_split_square_diff:  "finite {0..<x} \<Longrightarrow> 
+  (\<Sum> i \<in> {0..<x} . (\<Sum> j \<in> ({0..< x} - {i}) . c i * c j)) = 
+  (\<Sum> i \<in> {0..<x} . c i)^2 - (\<Sum> i \<in> {0..<x} . c i * c i)"
+  using double_sum_split_case_square[of "{0..<x}" "\<lambda> i. c i"] by fastforce
 
 end
-
-
-
 end

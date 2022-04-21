@@ -2,17 +2,32 @@
    Author: Chelsea Edmonds
 *)
 
+section \<open> Matrices/Vectors mod x \<close>
+text \<open> This section formalises operations and properties mod some integer x on integer matrices and 
+vectors. Much of this file was no longer needed for fishers once the generic idea of lifting a 0-1 matrix
+was introduced, however it is left as an example for future work on matrices mod n, beyond 0-1 matrices  \<close>
 theory Vector_Matrix_Mod imports Matrix_Vector_Extras
 Berlekamp_Zassenhaus.Finite_Field Berlekamp_Zassenhaus.More_Missing_Multiset  
 begin
 
+text \<open>Simple abbreviations for main mapping functions \<close>
 abbreviation to_int_mat :: "'a :: finite mod_ring mat \<Rightarrow> int mat" where
   "to_int_mat \<equiv> map_mat to_int_mod_ring"
 
 abbreviation to_int_vec :: "'a :: finite mod_ring vec \<Rightarrow> int vec" where
 "to_int_vec \<equiv> map_vec to_int_mod_ring"
 
-(* Copy - relying on them in Matrix Vector Extras doesn't work ? *)
+interpretation of_int_mod_ring_hom_sr: semiring_hom of_int_mod_ring
+proof (unfold_locales)
+  show "\<And>x y. of_int_mod_ring (x + y) = of_int_mod_ring x + of_int_mod_ring y"
+    by (transfer,presburger)
+  show "of_int_mod_ring 1 = 1" by (metis of_int_hom.hom_one of_int_of_int_mod_ring)
+  show "\<And>x y. of_int_mod_ring (x * y) = of_int_mod_ring x * of_int_mod_ring y"
+    by (transfer, simp add: mod_mult_eq) 
+qed
+
+text \<open>NOTE: The context directly below is copied from Matrix Vector Extras, as for some reason 
+they can't be used locally if not? Ideally remove in future if possible \<close>
 
 context inj_zero_hom
 begin
@@ -40,12 +55,18 @@ lemma  vec_hom_set_distinct_iff:
   using vec_hom_inj by (induct xs) (auto)
 end
 
+subsection \<open> Basic Mod Context \<close>
+
 locale mat_mod = fixes m :: int
 assumes non_triv_m: "m > 1"
 begin 
 
+text \<open>First define the mod operations on vectors \<close>
 definition vec_mod :: "int vec \<Rightarrow> int vec" where
 "vec_mod v \<equiv> map_vec (\<lambda> x . x mod m) v"
+
+(* Parse tree ambiguity is caused by bad definitions in the MPoly theory files. Issue raised
+on Isabelle Mailing List *)
 
 lemma vec_mod_dim[simp]: "dim_vec (vec_mod v) = dim_vec v"
   using vec_mod_def by simp
@@ -56,23 +77,17 @@ lemma vec_mod_index[simp]: "i < dim_vec v \<Longrightarrow> (vec_mod v) $ i = (v
 lemma vec_mod_index_same[simp]: "i < dim_vec v \<Longrightarrow> v $ i < m \<Longrightarrow> v $ i \<ge> 0 \<Longrightarrow> (vec_mod v) $ i = v $ i"
   by simp
 
-lemma vec_setI2:
-  assumes "i < dim_vec v "
-  shows "v $ i \<in> set\<^sub>v v"
-  using assms
+lemma vec_setI2: "i < dim_vec v \<Longrightarrow> v $ i \<in> set\<^sub>v v"
   by (simp add: vec_setI) 
 
-lemma vec_mod_eq: 
-  assumes "set\<^sub>v v \<subseteq> {0..<m}"
-  shows "vec_mod v = v"
+lemma vec_mod_eq: "set\<^sub>v v \<subseteq> {0..<m} \<Longrightarrow> vec_mod v = v"
   apply (intro eq_vecI, simp_all)
-  using assms vec_setI2 vec_mod_index_same
-  by (metis atLeastLessThan_iff subset_iff zmod_trivial_iff) 
+  using vec_setI2 vec_mod_index_same by (metis atLeastLessThan_iff subset_iff zmod_trivial_iff) 
 
-lemma vec_mod_set_vec_same:
-  assumes "set\<^sub>v v \<subseteq> {0..<m}"
-  shows "set\<^sub>v (vec_mod v) = set\<^sub>v v"
-  using vec_mod_eq assms by auto
+lemma vec_mod_set_vec_same:"set\<^sub>v v \<subseteq> {0..<m} \<Longrightarrow> set\<^sub>v (vec_mod v) = set\<^sub>v v"
+  using vec_mod_eq by auto
+
+text \<open>Define the mod operation on matrices \<close>
 
 definition mat_mod :: "int mat \<Rightarrow> int mat"  where 
 "mat_mod M \<equiv> map_mat (\<lambda> x. x mod m) M"
@@ -80,22 +95,15 @@ definition mat_mod :: "int mat \<Rightarrow> int mat"  where
 lemma mat_mod_dim[simp]: "dim_row (mat_mod M) = dim_row M" "dim_col (mat_mod M) = dim_col M"
   using mat_mod_def by simp_all
 
-lemma mat_mod_index [simp]: 
-  assumes "i < dim_row M" "j < dim_col M"
-  shows "(mat_mod M) $$ (i, j) = (M $$ (i, j)) mod m"
-  by(simp add: mat_mod_def assms)
+lemma mat_mod_index [simp]:  "i < dim_row M \<Longrightarrow> j < dim_col M \<Longrightarrow> (mat_mod M) $$ (i, j) = (M $$ (i, j)) mod m"
+  by(simp add: mat_mod_def)
 
-lemma mat_mod_index_same[simp]: 
-  assumes "i < dim_row M" "j < dim_col M"
-  assumes "M $$ (i, j) < m"
-  assumes "M $$ (i, j) \<ge> 0"
-  shows "mat_mod M $$ (i, j) = M $$ (i, j)"
-  by (simp add: assms mat_mod_def)
+lemma mat_mod_index_same[simp]: "i < dim_row M \<Longrightarrow> j < dim_col M \<Longrightarrow> M $$ (i, j) < m \<Longrightarrow> 
+    M $$ (i, j) \<ge> 0 \<Longrightarrow> mat_mod M $$ (i, j) = M $$ (i, j)"
+  by (simp add: mat_mod_def)
 
-lemma elements_matI2:
-  assumes "i < dim_row A" "j < dim_col A"
-  shows "A $$ (i, j) \<in> elements_mat A"
-  using assms by auto
+lemma elements_matI2: "i < dim_row A \<Longrightarrow> j < dim_col A \<Longrightarrow> A $$ (i, j) \<in> elements_mat A"
+  by auto
 
 lemma mat_mod_elements_in: 
   assumes "x \<in> elements_mat M"
@@ -117,7 +125,6 @@ proof (auto simp add: mat_mod_elements_in)
     by auto  
 qed
 
-
 lemma mat_mod_eq_cond:
   assumes "elements_mat M \<subseteq> {0..<m}"
   shows "mat_mod M = M"
@@ -129,10 +136,8 @@ proof (intro eq_matI, simp_all)
     by (simp) 
 qed
 
-lemma mat_mod_eq_elements_cond:
-  assumes "elements_mat M \<subseteq> {0..<m}"
-  shows "elements_mat (mat_mod M) = elements_mat M"
-  using mat_mod_eq_cond assms by auto
+lemma mat_mod_eq_elements_cond: "elements_mat M \<subseteq> {0..<m} \<Longrightarrow> elements_mat (mat_mod M) = elements_mat M"
+  using mat_mod_eq_cond by auto
 
 lemma mat_mod_vec_mod_row:  "i < dim_row A \<Longrightarrow> row (mat_mod A) i = vec_mod (row A i)"
   unfolding mat_mod_def vec_mod_def by (simp) 
@@ -140,16 +145,8 @@ lemma mat_mod_vec_mod_row:  "i < dim_row A \<Longrightarrow> row (mat_mod A) i =
 lemma mat_mod_vec_mod_col:  "j < dim_col A \<Longrightarrow> col (mat_mod A) j = vec_mod (col A j)"
   unfolding mat_mod_def vec_mod_def by (simp) 
 
-lemma count_vec_mod_eq: 
-  assumes "set\<^sub>v v \<subseteq> {0..<m}"
-  shows "count_vec v x = count_vec (vec_mod v) x"
-  using vec_mod_eq by (simp add: assms) 
-
-lemma mat_mod_non_empty_col_iff: 
-  assumes "elements_mat M \<subseteq> {0..<m}"
-  assumes "i < dim_row M" "j < dim_col M"
-  shows "non_empty_col (mat_mod M) j \<longleftrightarrow> non_empty_col M j"
-  using mat_mod_eq_cond assms by auto 
+lemma count_vec_mod_eq: "set\<^sub>v v \<subseteq> {0..<m} \<Longrightarrow> count_vec v x = count_vec (vec_mod v) x"
+  using vec_mod_eq by (simp) 
 
 lemma elems_mat_setv_row_0m: "i < dim_row M \<Longrightarrow> elements_mat M \<subseteq> {0..<m} \<Longrightarrow> set\<^sub>v (row M i) \<subseteq> {0..<m}"
   by (metis row_elems_subset_mat subset_trans)
@@ -157,21 +154,13 @@ lemma elems_mat_setv_row_0m: "i < dim_row M \<Longrightarrow> elements_mat M \<s
 lemma elems_mat_setv_col_0m: "j < dim_col M \<Longrightarrow> elements_mat M \<subseteq> {0..<m} \<Longrightarrow> set\<^sub>v (col M j) \<subseteq> {0..<m}"
   by (metis col_elems_subset_mat subset_trans)
 
-lemma mat_mod_count_row_eq: 
-  assumes "i < dim_row M"
-  assumes "elements_mat M \<subseteq> {0..<m}"
-  shows "count_vec (row (mat_mod M) i) x = count_vec (row M i) x"
-  using count_vec_mod_eq mat_mod_vec_mod_row assms elems_mat_setv_row_0m
-  by simp
+lemma mat_mod_count_row_eq:  "i < dim_row M \<Longrightarrow> elements_mat M \<subseteq> {0..<m} \<Longrightarrow> 
+    count_vec (row (mat_mod M) i) x = count_vec (row M i) x"
+  using count_vec_mod_eq mat_mod_vec_mod_row elems_mat_setv_row_0m by simp
 
-lemma mat_mod_count_col_eq: 
-  assumes "j < dim_col M"
-  assumes "elements_mat M \<subseteq> {0..<m}"
-  shows "count_vec (col (mat_mod M) j) x = count_vec (col M j) x"
-  using count_vec_mod_eq mat_mod_vec_mod_col assms elems_mat_setv_col_0m
-  by simp
-
-
+lemma mat_mod_count_col_eq: "j < dim_col M \<Longrightarrow> elements_mat M \<subseteq> {0..<m} \<Longrightarrow> 
+    count_vec (col (mat_mod M) j) x = count_vec (col M j) x"
+  using count_vec_mod_eq mat_mod_vec_mod_col elems_mat_setv_col_0m by simp
 
 lemma mod_mat_one: "mat_mod (1\<^sub>m n) = (1\<^sub>m n)"
   by (intro eq_matI, simp_all add: mat_mod_def non_triv_m)
@@ -185,33 +174,17 @@ lemma vec_mod_unit: "vec_mod (unit_vec n i) = (unit_vec n i)"
 lemma vec_mod_zero: "vec_mod (0\<^sub>v n) = (0\<^sub>v n)"
   by (intro eq_vecI, simp_all add: non_triv_m)
 
-(*
-lemma mat_mod_distinct_cols_iff: 
-"distinct (cols M) \<longleftrightarrow> distinct (cols M\<^sub>m)"
-proof (rule iffI)
-  assume "distinct (cols M)"
-  have map: "cols M\<^sub>m = map (map_vec (\<lambda> x. \<lfloor>x\<rfloor> mod m)) (cols M)"
-    using list_eq_iff_nth_eq inc_mat_mod_map_col inc_mat_mod_dim
-    by (metis (mono_tags, lifting) cols_length cols_nth length_map nth_map)
-  have "inj_on (map_vec (\<lambda> x. \<lfloor>x\<rfloor> mod m)) (set (cols M))" 
-    using inc_mat_mod_map_col by (intro inj_onI) (metis cols_length cols_nth inc_mat_mod_map_col_inv obtain_set_list_item) 
-  thus "distinct (cols M\<^sub>m)" using distinct_map map
-    using \<open>distinct (cols M)\<close> by auto 
-next
-  assume a2: "distinct (cols M\<^sub>m)"
-  have map: "cols M = map (map_vec (real_of_int)) (cols M\<^sub>m)"
-    using list_eq_iff_nth_eq inc_mat_mod_map_col_inv inc_mat_mod_dim
-    by (metis (mono_tags, lifting) cols_length cols_nth length_map nth_map)
-  have "inj_on (map_vec (real_of_int)) (set (cols M\<^sub>m))" 
-    by (intro inj_onI, simp add: of_int_hom.vec_hom_inj) 
-  thus "distinct (cols M)"
-    using a2 map distinct_map by auto
-qed
-*)
+lemma mat_mod_cond_iff: "elements_mat M \<subseteq> {0..<m} \<Longrightarrow> P M \<longleftrightarrow> P (mat_mod M)"
+  by (simp add: mat_mod_eq_cond)
 
 end
 
-locale mod_type = (* NOTE COPIED AND PASTED FROM POLYMOD *)
+subsection \<open>Mod Type \<close>
+text \<open> The below locale takes lemmas from the Poly Mod Finite Field theory in the Berlekamp Zassenhaus
+AFP entry, however has removed any excess material on polynomials mod, and only included the general 
+factors. Ideally, this could be used as the base locale for both in the future \<close>
+
+locale mod_type =
   fixes m :: int and ty :: "'a :: nontriv itself"
   assumes m: "m = CARD('a)"
 begin
@@ -299,9 +272,11 @@ lemma UNIV_M_Rel[transfer_rule]: "rel_set M_Rel {0..<m} UNIV"
 
 end
 
+subsection \<open> Mat mod type \<close>
+text \<open> Define a context to work on matrices and vectors of type mod_ring \<close>
+
 locale mat_mod_type = mat_mod + mod_type
 begin
-
 
 lemma to_int_mod_ring_plus: "to_int_mod_ring ((x :: 'a mod_ring) + y) = (to_int_mod_ring x + to_int_mod_ring y) mod m"
    using m by (transfer, auto)
@@ -309,6 +284,7 @@ lemma to_int_mod_ring_plus: "to_int_mod_ring ((x :: 'a mod_ring) + y) = (to_int_
 lemma to_int_mod_ring_times: "to_int_mod_ring ((x :: 'a mod_ring) * y) = (to_int_mod_ring x * to_int_mod_ring y) mod m"
   using m by (transfer, auto)
 
+text \<open> Set up transfer relation for matrices and vectors \<close>
 definition MM_Rel :: "int mat \<Rightarrow> 'a mod_ring mat \<Rightarrow> bool"
   where "MM_Rel f f' \<equiv> (mat_mod f = to_int_mat f')"
 
@@ -346,13 +322,14 @@ lemma eq_MM_Rel[transfer_rule]: "(MM_Rel ===> MM_Rel ===> (=)) (\<lambda> f f' .
 lemma eq_MV_Rel[transfer_rule]: "(MV_Rel ===> MV_Rel ===> (=)) (\<lambda> v v' . vec_mod v = vec_mod v') (=) " 
   unfolding MV_Rel_def rel_fun_def using to_int_mod_ring_hom.vec_hom_inj by auto
 
- 
 
-lemma index_MV_Rel[transfer_rule]: "(MV_Rel ===> (=) ===> M_Rel) (\<lambda> v i. if i < dim_vec v then v $ i else 0) (\<lambda> v i. if i < dim_vec v then v $ i else 0)"
+lemma index_MV_Rel[transfer_rule]: "(MV_Rel ===> (=) ===> M_Rel) 
+    (\<lambda> v i. if i < dim_vec v then v $ i else 0) (\<lambda> v i. if i < dim_vec v then v $ i else 0)"
   using lt_dim_vec_MV_Rel unfolding MV_Rel_def M_Rel_def M_def rel_fun_def 
   by (simp, metis to_int_vec_index vec_mod_index)
 
-lemma index_MM_Rel[transfer_rule]: "(MM_Rel ===> (=) ===> (=) ===> M_Rel) (\<lambda> M i j. if (i < dim_row M \<and> j < dim_col M) then M $$ (i, j) else 0)
+lemma index_MM_Rel[transfer_rule]: "(MM_Rel ===> (=) ===> (=) ===> M_Rel) 
+    (\<lambda> M i j. if (i < dim_row M \<and> j < dim_col M) then M $$ (i, j) else 0)
    (\<lambda> M i j. if (i < dim_row M \<and> j < dim_col M) then M $$ (i, j) else 0)"
   using lt_dim_row_MM_Rel lt_dim_col_MM_Rel unfolding  M_Rel_def M_def rel_fun_def 
   by (simp, metis mat_mod_index to_int_mat_index MM_Rel_def)
@@ -454,7 +431,8 @@ proof
     by (auto simp: mat_mod_N_representative)
 qed
 
-lemma mem_MV_Rel[transfer_rule]: "(MV_Rel ===> rel_set MV_Rel ===> (=)) (\<lambda> x Y. \<exists>y \<in> Y. vec_mod x = vec_mod y) (\<in>)"
+lemma mem_MV_Rel[transfer_rule]: 
+  "(MV_Rel ===> rel_set MV_Rel ===> (=)) (\<lambda> x Y. \<exists>y \<in> Y. vec_mod x = vec_mod y) (\<in>)"
 proof (intro rel_funI iffI)
   fix x y X Y assume xy: "MV_Rel x y" and XY: "rel_set MV_Rel X Y"
   { assume "\<exists>x' \<in> X. vec_mod x = vec_mod x'"
@@ -470,7 +448,8 @@ proof (intro rel_funI iffI)
   with x'X show "\<exists>x' \<in> X. vec_mod x = vec_mod x'" by auto
 qed
 
-lemma mem_MM_Rel[transfer_rule]: "(MM_Rel ===> rel_set MM_Rel ===> (=)) (\<lambda> x Y. \<exists>y \<in> Y. mat_mod x = mat_mod y) (\<in>)"
+lemma mem_MM_Rel[transfer_rule]: 
+  "(MM_Rel ===> rel_set MM_Rel ===> (=)) (\<lambda> x Y. \<exists>y \<in> Y. mat_mod x = mat_mod y) (\<in>)"
 proof (intro rel_funI iffI)
   fix x y X Y assume xy: "MM_Rel x y" and XY: "rel_set MM_Rel X Y"
   { assume "\<exists>x' \<in> X. mat_mod x = mat_mod x'"
@@ -487,7 +466,7 @@ proof (intro rel_funI iffI)
 qed
 
 lemma conversep_MM_Rel_OO_MM_Rel [simp]: "MM_Rel\<inverse>\<inverse> OO MM_Rel = (=)"
-  using mat_mod_to_int_mat  apply (intro ext, auto simp: OO_def MM_Rel_def)
+  using mat_mod_to_int_mat apply (intro ext, auto simp: OO_def MM_Rel_def)
   using to_int_mod_ring_hom.mat_hom_inj by auto 
 
 lemma MM_Rel_OO_conversep_MM_Rel [simp]: "MM_Rel OO MM_Rel\<inverse>\<inverse> = (\<lambda> M M' . mat_mod M = mat_mod M')"
@@ -499,7 +478,8 @@ lemma conversep_MM_Rel_OO_eq_m [simp]: "MM_Rel\<inverse>\<inverse> OO (\<lambda>
 lemma eq_m_OO_MM_Rel [simp]: "(\<lambda> M M' . mat_mod M = mat_mod M') OO MM_Rel = MM_Rel"
   by (intro ext, auto simp: OO_def MM_Rel_def)
 
-lemma eq_mset_MM_Rel [transfer_rule]: "(rel_mset MM_Rel ===> rel_mset MM_Rel ===> (=)) (rel_mset (\<lambda> M M' . mat_mod M = mat_mod M')) (=)"
+lemma eq_mset_MM_Rel [transfer_rule]: 
+  "(rel_mset MM_Rel ===> rel_mset MM_Rel ===> (=)) (rel_mset (\<lambda> M M' . mat_mod M = mat_mod M')) (=)"
 proof (intro rel_funI iffI)
   fix A B X Y
   assume AX: "rel_mset MM_Rel A X" and BY: "rel_mset MM_Rel B Y"
@@ -516,7 +496,8 @@ proof (intro rel_funI iffI)
   show "rel_mset (\<lambda> M M' . mat_mod M = mat_mod M') A B" by simp
 qed
 
-lemma vec_mset_MV_Rel[transfer_rule]: "(MV_Rel  ===> (=)) (\<lambda> v. vec_mset (vec_mod v)) (\<lambda> v. image_mset (to_int_mod_ring) (vec_mset v))"
+lemma vec_mset_MV_Rel[transfer_rule]: 
+  "(MV_Rel  ===> (=)) (\<lambda> v. vec_mset (vec_mod v)) (\<lambda> v. image_mset (to_int_mod_ring) (vec_mset v))"
   unfolding MV_Rel_def rel_fun_def 
 proof (intro allI impI subset_antisym subsetI)
   fix x :: "int vec" fix  y :: "'a mod_ring vec"

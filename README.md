@@ -11,4 +11,6 @@ To apply linear algebraic techniques, it is also essential to be able to represe
 
 ## Library History
 08/02/2022: Initial public library release. Includes results on incidence systems, design theory extensions, general methods for the rank and linear bound arguments, and form proofs of the odd town theorem, uniform Fisher's inequality, and generalised Fisher's inequality. 
+21/04/2022: Major update to the Incidence Matrix representation. This generalised the types used, 
+which also enabled significant simplifications to later proofs. This is the version prepared for the AFP entry. 
 
