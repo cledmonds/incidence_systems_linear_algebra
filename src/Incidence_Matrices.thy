@@ -13,7 +13,7 @@ begin
 
 subsection \<open>Incidence Vectors \<close>
 text \<open>A function which takes an ordered list of points, and a block, 
-returning a 0-1 vector $v$ where $v \$ i = 1 \<longleftrightarrow> Vs ! i \<in> bl$ \<close>
+returning a 0-1 vector $v$ where there is a 1 in the ith position if point i is in that block \<close>
 
 definition inc_vec_of :: "'a list \<Rightarrow> 'a set \<Rightarrow> ('b :: {ring_1}) vec" where
 "inc_vec_of Vs bl \<equiv> vec (length Vs) (\<lambda> i . if (Vs ! i) \<in> bl then 1 else 0)"
@@ -56,9 +56,9 @@ qed
 subsection \<open> Incidence Matrices \<close>
 
 text \<open> A function which takes a list of points, and list of sets of points, and returns 
-a $v \<times> b$ 0-1 matrix $M$, where $v$ is the number of points, and $b$ the number of sets, such that
-$ M \$\$ (i, j) = 1 \<longleftrightarrow> (Vs ! i) \<in> (Bs ! i)$ The matrix has type @{typ "('b :: ring_1) mat"} 
-to allow for operations commonly used on matrices \cite{stinsonCombinatorialDesignsConstructions2004}\<close>
+a $v \times b$ 0-1 matrix $M$, where $v$ is the number of points, and $b$ the number of sets, such 
+that there is a 1 in the i, j position if and only if point i is in block j. The matrix has 
+type @{typ "('b :: ring_1) mat"} to allow for operations commonly used on matrices \cite{stinsonCombinatorialDesignsConstructions2004}\<close>
 
 definition inc_mat_of :: "'a list \<Rightarrow> 'a set list \<Rightarrow> ('b :: {ring_1}) mat" where
 "inc_mat_of Vs Bs \<equiv> mat (length Vs) (length Bs) (\<lambda> (i,j) . if (Vs ! i) \<in> (Bs ! j) then 1 else 0)"

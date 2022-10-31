@@ -412,7 +412,7 @@ lemma map_vec_compose: "map_vec f (map_vec g v) = map_vec (f \<circ> g) v"
 
 subsection \<open>Matrix Extras\<close>
 
-text \<open>As with vectors, the all_ones_mat definition defines the concept of a matrix where all 
+text \<open>As with vectors, the all ones mat definition defines the concept of a matrix where all 
 elements are 1 \<close>
 
 definition all_ones_mat :: "nat \<Rightarrow> 'a :: {zero,one} mat" ("J\<^sub>m") where

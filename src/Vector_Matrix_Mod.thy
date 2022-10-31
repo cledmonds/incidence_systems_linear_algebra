@@ -273,7 +273,7 @@ lemma UNIV_M_Rel[transfer_rule]: "rel_set M_Rel {0..<m} UNIV"
 end
 
 subsection \<open> Mat mod type \<close>
-text \<open> Define a context to work on matrices and vectors of type mod_ring \<close>
+text \<open> Define a context to work on matrices and vectors of type @{typ "'a mod_ring"} \<close>
 
 locale mat_mod_type = mat_mod + mod_type
 begin

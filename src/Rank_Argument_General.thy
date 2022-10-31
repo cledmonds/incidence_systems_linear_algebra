@@ -401,7 +401,7 @@ proof -
   thus ?thesis using 1 by simp
 qed
 
-text \<open>Rank Argument 1: Given two a $x \times y$ matrix $M$ where $MM^T$ has rank x, $x \<le> y$\<close>
+text \<open>Rank Argument 1: Given two a $x \times y$ matrix $M$ where $MM^T$ has rank x, $x \le y$\<close>
 lemma rank_argument: 
   fixes M :: "('c :: {conjugatable_ordered_field}) mat"
   assumes "M \<in> carrier_mat x y"
