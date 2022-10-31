@@ -14,3 +14,6 @@ To apply linear algebraic techniques, it is also essential to be able to represe
 21/04/2022: Major update to the Incidence Matrix representation. This generalised the types used, 
 which also enabled significant simplifications to later proofs. This is the version prepared for the AFP entry. 
 
+## Authors
+Primary Author is Chelsea Edmonds.
+Thanks to Larry Paulson for the useful tips & feedback.
